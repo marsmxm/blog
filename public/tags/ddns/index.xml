@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>DDNS on mxm&#39;s blog</title>
+    <link>http://host.mxm.host/tags/ddns/</link>
+    <description>Recent content in DDNS on mxm&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Sun, 14 Jun 2015 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="http://host.mxm.host/tags/ddns/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>通过 Linode API 实现动态 DNS</title>
+      <link>http://host.mxm.host/post/2015-06-14-linode-ddns/</link>
+      <pubDate>Sun, 14 Jun 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://host.mxm.host/post/2015-06-14-linode-ddns/</guid>
+      <description>Linode的VPS用了也有几年了，最近才发现它的API的实用性，其中一项就是可以简单又灵活的实现动态DNS。 要使用DNS相关的API先决条</description>
+    </item>
+    
+  </channel>
+</rss>
