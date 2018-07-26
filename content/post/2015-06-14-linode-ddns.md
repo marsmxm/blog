@@ -16,11 +16,11 @@ Linode的VPS用了也有几年了，最近才发现它的API的实用性，其�
 #### **服务器端的配置**
 
 进入账号后点击DNS Manager标签页，
-![DNS Manager](/assets/linode-ddns/1.png)
+![DNS Manager](/linode-ddns/1.png)
 然后在下面的列表里点击自己的域名，进入该域名的编辑页面。
 
 之后点击A/AAAA Records列表下的“Add a new A record”链接，新增一个域名和IP的对应关系。
-![Add a new record](/assets/linode-ddns/2.png)
+![Add a new record](/linode-ddns/2.png)
 Hostname填想要配置成的动态域名，例如home.example.com；IP Address可以先随便写一个，比如127.0.0.1，因为当动态域名配置好之后这个IP地址是会被自动更新的；最后的TTL应该设置成一个稍短的时间，因为一般来说ISP会比较频繁的更新你的IP地址，这样域名应该设置较短的存活时间以及时反映IP的变化。
 接下来要实现在客户端(使用动态域名指向的IP的设备)周期性的更新刚刚配置的域名所对应的IP。
 
@@ -30,7 +30,7 @@ Hostname填想要配置成的动态域名，例如home.example.com；IP Address�
 Linode提供了[不少API](https://www.linode.com/api/dns)用以实现对DNS的查询和操作。想要使用这些API得先申请一个API Key。
 
 点击页面右上角的my profile，然后点击API Keys标签页。
-![API Key](/assets/linode-ddns/3.png)
+![API Key](/linode-ddns/3.png)
 Label处填写一个API Key的标签，比如DDNS。Expires选Never，永远不过期。创建之后把key复制下来保存好。
 
 接下来在浏览器里打开下面这个链接，用这个API来查看你所有的域名：
