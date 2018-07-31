@@ -12,8 +12,7 @@ Linode的VPS用了也有几年了，最近才发现它的API的实用性，其�
 
 要使用DNS相关的API先决条件当然是得由Linode来托管你的域名，关于Linode的DNS托管可以看下[这里](https://www.linode.com/docs/networking/dns/dns-manager)。下面进入主题：
 
-
-#### **服务器端的配置**
+### **服务器端的配置**
 
 进入账号后点击DNS Manager标签页，
 ![DNS Manager](/linode-ddns/1.png)
@@ -24,8 +23,7 @@ Linode的VPS用了也有几年了，最近才发现它的API的实用性，其�
 Hostname填想要配置成的动态域名，例如home.example.com；IP Address可以先随便写一个，比如127.0.0.1，因为当动态域名配置好之后这个IP地址是会被自动更新的；最后的TTL应该设置成一个稍短的时间，因为一般来说ISP会比较频繁的更新你的IP地址，这样域名应该设置较短的存活时间以及时反映IP的变化。
 接下来要实现在客户端(使用动态域名指向的IP的设备)周期性的更新刚刚配置的域名所对应的IP。
 
-
-#### **客户端的配置**
+### **客户端的配置**
 
 Linode提供了[不少API](https://www.linode.com/api/dns)用以实现对DNS的查询和操作。想要使用这些API得先申请一个API Key。
 
