@@ -10,7 +10,7 @@ tags: [Scheme, Y Combinator, Recursive, Lisp]
 
 看了[王垠](http://www.yinwang.org/)的[幻灯片](http://www.slideshare.net/yinwang0/reinventing-the-ycombinator)又回忆起了Y combinator的推导过程。感觉他的解释比《The Little Schemer》来的更易懂，作为备忘，把推导过程记录如下：
 
-```lisp
+```scheme
 ;; 有define的时候递归是这样的
 (define length
   (lambda (xs)
