@@ -4,7 +4,7 @@ date: 2012-05-30
 draft: false
 author: "Mu Xian Ming"
 
-categories: [PL]
+categories: [P]
 tags: [Python, Racket]
 ---
 

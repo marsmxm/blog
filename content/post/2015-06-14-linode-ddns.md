@@ -4,7 +4,7 @@ date: 2015-06-14
 draft: false
 author: "Mu Xian Ming"
 
-categories: [Infra]
+categories: [I]
 tags: [Linux, Linode, DDNS]
 ---
 

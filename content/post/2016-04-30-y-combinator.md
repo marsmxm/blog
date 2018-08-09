@@ -4,7 +4,7 @@ date: 2016-04-30
 draft: false
 author: "Mu Xian Ming"
 
-categories: [PL]
+categories: [P]
 tags: [Scheme, Y Combinator, Recursive, Lisp]
 ---
 

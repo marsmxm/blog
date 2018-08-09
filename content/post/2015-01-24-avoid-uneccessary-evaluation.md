@@ -4,7 +4,7 @@ date: 2015-01-24
 draft: false
 author: "Mu Xian Ming"
 
-categories: [PL]
+categories: [P]
 tags: [Lisp, lazy evaluation, Racket]
 ---
 
