@@ -40,7 +40,7 @@ tags: [Typed Racket, Java, Subtyping]
 
 ## 深度 Subtyping
 
-为了增强类型系统的表达力，Typed Racket、ML 等语言引入了多态（polymorphism），或者更准确的说，参数多态（parametric polymorphism）的概念，所以就有了含有类型参数的类型（类似的概念在 Java 中被叫做 generic，而 polymorphism 则被 Java 的设计者用来指代 OOP 的一个核心特性，dynamic dispatch）。比如`(Listof t)`和`'a list`分别是 Typed Racket 和 ML 中的列表类型，`t`和`'a`是类型参数，用来表示列表中元素的类型。一个很自然的问题是，列表会因为所含元素的类型的父子关系而也有了相同的父子关系吗？比如在 Typed Racket 中，`(Listof color-pt)`是`(Listof pt)`的子类型吗？答案是，对于列表类型来说，这个父子关系是成立的，使得这个关系成立的规则就叫做 **深度（Depth）Subtyping**。用一个例子来说明：
+为了增强类型系统的表达力，Typed Racket、ML 等语言引入了多态（polymorphism），或者更准确的说，参数多态（parametric polymorphism）的概念，所以就有了含有类型参数的类型（类似的概念在 Java 中被叫做 generics，而 polymorphism 则被 Java 的设计者用来指代 OOP 的一个核心特性，dynamic dispatch）。比如`(Listof t)`和`'a list`分别是 Typed Racket 和 ML 中的列表类型，`t`和`'a`是类型参数，用来表示列表中元素的类型。一个很自然的问题是，列表会因为所含元素的类型的父子关系而也有了相同的父子关系吗？比如在 Typed Racket 中，`(Listof color-pt)`是`(Listof pt)`的子类型吗？答案是，对于列表类型来说，这个父子关系是成立的，使得这个关系成立的规则就叫做 **深度（Depth）Subtyping**。用一个例子来说明：
 
 ```racket
 (: sum-of-dist (-> (Listof pt) Real))
@@ -127,4 +127,8 @@ m-pts
 因为`transform-then-dist`的参数`f`声明的类型是`(-> color-pt pt)`，所以`f3`的类型`(-> pt pt)`是`(-> color-pt pt)`的子类型。更宽泛的说，如果函数 2 的参数是 函数 1 参数的**父类型**，那么函数 2 本身也是函数 1 的子类型。参数类型的父子关系与函数类型的父子关系相反的这种关系叫做**逆变的（contravariant）**。所以对于函数的 subtyping 规则只需记住，函数与参数的类型是逆变的，与返回值的类型是协变的。
 
 ## Java 中 的 Subtyping
+
+Java 中实现 subtyping 的途径是继承类和实现接口。但是需要认清的是，类（class）和类型（type）是不同的两个概念，类定义了对象的行为，而类型描述的是对象含有哪些 field 和 method（在这一点上接口和类型有更多的共同点）。
+
+### 数组的 Subtyping
 
