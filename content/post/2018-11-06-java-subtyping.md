@@ -1,7 +1,7 @@
 ---
 title: "Subtyping"
 date: 2018-11-13T01:14:13+08:00
-draft: true
+draft: false
 author: "Mu Xian Ming"
 
 categories: [P]
@@ -126,9 +126,40 @@ m-pts
 
 因为`transform-then-dist`的参数`f`声明的类型是`(-> color-pt pt)`，所以`f3`的类型`(-> pt pt)`是`(-> color-pt pt)`的子类型。更宽泛的说，如果函数 2 的参数是 函数 1 参数的**父类型**，那么函数 2 本身也是函数 1 的子类型。参数类型的父子关系与函数类型的父子关系相反的这种关系叫做**逆变的（contravariant）**。所以对于函数的 subtyping 规则只需记住，函数与参数的类型是逆变的，与返回值的类型是协变的。
 
-## Java 中 的 Subtyping
+## Java 中 的 Depth Subtyping
 
 Java 中实现 subtyping 的途径是继承类和实现接口。但是需要认清的是，类（class）和类型（type）是不同的两个概念，类定义了对象的行为，而类型描述的是对象含有哪些 field 和 method（在这一点上接口和类型有更多的共同点）。
 
-### 数组的 Subtyping
+在[前面](#深度-subtyping)提到过 depth subtyping 必须建立在 immutablity 先决条件上才能保证类型系统的 soundness。但是 Java 中的数组是 mutable 的，同时也允许 depth subtyping，这就导致有些情况下程序会抛出运行时异常`ArrayStoreException`：
 
+```java
+ColorPoint[] cpts = {new ColorPoint(1, 2, "red")};
+Point[] pts = cpts;
+pts[0] = new Point(1, 2); // throws unchecked java.lang.ArrayStoreException
+System.out.println(cpts[0].color);
+```
+
+Java 选择把检查放在写值入数组的时候，这样保证了数组元素类型的一致，也减少了在每次读元素时再检查造成的性能开销。Generics 被加到 Java 里后不再自动支持 depth subtyping，`List<ColorPoint>` 不再是`List<Point>`的子类型，如果想得到类似 depth subtyping 的表达力，可以使用叫做 **bounded wildcards** 的特殊语法：
+
+```java
+List<Point> pts = Lists.newArrayList(new Point(1, 2));
+List<ColorPoint> cpts = Lists.newArrayList(new ColorPoint(1, 2, "red"));
+List<? extends Point> subPoints = cpts;
+List<? super ColorPoint> superColorPoints = pts;
+```
+
+但是为了保证类型系统的 soundness，用 bounded wildcards 声明的变量的使用上也有一些限制：1) 对`? extends T`声明的变量读操作可以得到类型为`T`的值，但不能对其进行写操作；2) 可以将`T`类型的值写入`? super T`声明的变量，但不能对其进行读操作。
+
+```java
+Point p = subPoints.get(0);
+subPoints.add(new Point(1, 2)); // 编译错误
+
+superColorPoints.add(new ColorPoint(1, 2, "red"));
+ColorPoint cp = superColorPoints.get(0); // 编译错误
+```
+
+## 参考
+
+- [Programming Languages, Part C](https://www.coursera.org/learn/programming-languages-part-c) on Coursera
+- [The Typed Racket Guide](https://docs.racket-lang.org/ts-guide/index.html)
+- [Effective Java, 3rd Edition](https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/)
