@@ -85,7 +85,7 @@ m-pts
 ;;  given: (MListof color-pt) in: m-color-pts
 ```
 
-为什么是否 mutable 会决定 depth subtyping 的成立与否？假设上例中 18 行的函数调用被类型系统所允许，那么接下来如果执行`(color-pt-c (mcar m-color-pts))`将会导致运行时错误，这个错误的原因是值与类型的错误匹配，而这本该是类型系统在程序运行前就检查出进而阻止的。像这样没能阻止不该发生的错误的类型系统，我们说它不是 **sound** 的。所以 depth subtyping 对于 immutability 的依赖是为了保证类型系统的 soundness。
+为什么是否 mutable 会决定 depth subtyping 的成立与否？假设上例中 18 行的函数调用被类型系统所允许，那么接下来如果执行`(color-pt-c (mcar m-color-pts))`将会导致运行时错误，这个错误的原因是值与类型的错误匹配，而这本该是类型系统在程序运行前就检查出进而阻止的。像这样没能阻止不该发生的错误的类型系统，我们说它是 **unsound** 的。所以 depth subtyping 对于 immutability 的依赖是为了保证类型系统的 soundness。
 
 ## 函数的 Subtyping
 
