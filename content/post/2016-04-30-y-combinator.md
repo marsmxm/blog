@@ -8,7 +8,7 @@ categories: [P]
 tags: [Scheme, Y Combinator, Recursive, Lisp]
 ---
 
-看了[王垠](http://www.yinwang.org/)的[幻灯片](http://www.slideshare.net/yinwang0/reinventing-the-ycombinator)又回忆起了Y combinator的推导过程。感觉他的解释比《The Little Schemer》来的更易懂，作为备忘，把推导过程记录如下：
+看了这个[幻灯片](http://www.slideshare.net/yinwang0/reinventing-the-ycombinator)又回忆起了Y combinator的推导过程。感觉他的解释比《The Little Schemer》来的更易懂，作为备忘，把推导过程记录如下：
 
 ```scheme
 ;; 有define的时候递归是这样的
@@ -96,4 +96,35 @@ tags: [Scheme, Y Combinator, Recursive, Lisp]
           (* n (factorial (sub1 n)))))))
  5)
 ;; => 120
+```
+
+从类型的角度也许可以加深对 Y combinator 的理解，下面是用 OCaml 的 module 系统来实现：
+
+```ocaml
+module type Ysig =
+  sig
+    val y : (('a -> 'a) -> ('a -> 'a)) -> ('a -> 'a)
+  end
+
+module Yfunc () : Ysig = struct
+  type 'a t = Into of ('a t -> 'a)
+
+  let rec y f =
+    h f (Into (h f))
+  and h f a =
+    f (g a)
+  and g (Into a) x =
+    a (Into a) x
+end
+
+module Ystruct = Yfunc ()
+
+(* test *)
+let mk_fact fact n =
+  if n = 0
+  then 1
+  else n * fact (n - 1)
+
+let _ = Ystruct.y mk_fact 10
+(* - : int = 3628800 *)
 ```
