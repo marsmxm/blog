@@ -10,7 +10,7 @@ tags: [Typed Racket, Java, Subtyping]
 
 ## 概述
 
-类型可以看作是满足某一条件的一类值的集合的名称。编程语言中的静态类型系统是为了（静态地）防止值与类型的错误匹配，从而在程序运行前就发现和类型相关的错误。**子类型（Subtyping）**概念的引入是为了增加类型系统的表达力同时也增强了它的实用性。先通过 Typed Racket 来更好的理解一些通用的概念。下面是用`struct`定义的一个 point 类型`pt`，以及计算`pt`到原点距离的函数`dist-to-origin`：
+类型可以看作是满足某一条件的一类值的集合的名称。编程语言中的静态类型系统是为了（静态地）防止值与类型的错误匹配，从而在程序运行前就发现和类型相关的错误。**子类型（Subtyping）**概念的引入是为了增加类型系统的表达力同时也增强了它的实用性。先通过 Typed Racket 来更好的理解一些通用的概念（本文中的程序可以通过在 [DrRacket](https://racket-lang.org/) 编辑器的第一行加上`#lang typed/racket`来运行）。下面是用`struct`定义的一个 point 类型`pt`，以及计算`pt`到原点距离的函数`dist-to-origin`：
 
 ```racket
 (struct pt ([x : Real] [y : Real]))
