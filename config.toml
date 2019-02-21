@@ -1,6 +1,6 @@
 baseURL = "http://mxm.ink/"
 languageCode = "en"
-defaultContentLanguage = "en"                             # en / zh-cn / ... (This field determines which i18n file to use)
+defaultContentLanguage = "zh-cn"                             # en / zh-cn / ... (This field determines which i18n file to use)
 title = "mxm's blog"
 enableRobotsTXT = true
 enableEmoji = true
@@ -22,11 +22,11 @@ copyright = ""            # default: author.name ↓        # 默认为下面配
   priority = 0.5
   filename = "sitemap.xml"
 
-[[menu.main]]             # config your menu              # 配置目录
-  name = "Home"
-  weight = 10
-  identifier = "home"
-  url = "/"
+# [[menu.main]]             # config your menu              # 配置目录
+#   name = "Home"
+#   weight = 10
+#   identifier = "home"
+#   url = "/"
 [[menu.main]]
   name = "Archives"
   weight = 20
@@ -131,9 +131,9 @@ copyright = ""            # default: author.name ↓        # 默认为下面配
     pagePV = true
 
   [params.reward]                                         # 文章打赏
-    enable = false
-    wechat = "/path/to/your/wechat-qr-code.png"           # 微信二维码
-    alipay = "/path/to/your/alipay-qr-code.png"           # 支付宝二维码
+    enable = true
+    # wechat = "/path/to/your/wechat-qr-code.png"           # 微信二维码
+    alipay = "/pay.png"           # 支付宝二维码
 
   [params.social]                                         # 社交链接
     j-douban = "https://www.douban.com/people/marsmxm"
