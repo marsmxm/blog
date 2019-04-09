@@ -137,8 +137,8 @@ copyright = ""            # default: author.name ↓        # 默认为下面配
 
   [params.social]                                         # 社交链接
     j-douban = "https://www.douban.com/people/marsmxm"
+    h-weibo = "https://weibo.com/marsmxm"
     k-pocket = "https://getpocket.com/@marsmxm"
-    # h-weibo = "https://weibo.com/marsmxm"
     # a-email = "mailto:your@email.com"
     # b-stack-overflow = "http://localhost:1313"
     # c-twitter = "http://localhost:1313"
