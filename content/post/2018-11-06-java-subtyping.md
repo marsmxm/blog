@@ -1,5 +1,5 @@
 ---
-title: "Subtyping"
+title: "Subtyping 浅析"
 date: 2018-11-13T01:14:13+08:00
 draft: false
 author: "Mu Xian Ming"

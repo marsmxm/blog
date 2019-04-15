@@ -65,7 +65,7 @@ $global-background: $white !default;
 
 // Headings font size of the site.
 $global-headings: (
-  h1: 26px,
+  h1: 28px,
   h2: 24px,
   h3: 20px,
   h4: 16px,
@@ -120,7 +120,7 @@ $post-padding: 0.5em 0 !default;
 $post-border: 1px solid $light-gray !default;
 
 // Font size of post title.
-$post-title-font-size: 27px !default;
+$post-title-font-size: 30px !default;
 
 // Font weight of post title.
 $post-title-font-weight: 400 !default;
@@ -235,6 +235,7 @@ $code-type-list: (
   language-sql: "SQL",
   language-shell: "Shell",
   language-scheme: "Scheme",
+  language-pie: "Pie",
 
   language-erlang: "Erlang",
   language-go: "Go",
