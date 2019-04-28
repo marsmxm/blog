@@ -54,7 +54,7 @@ valToString x val = case x of
 
 ### 准备工作
 
-Pie 是一个用 [Racket](https://racket-lang.org/) 开发的语言，所以它的开发环境也是基于 DrRacket。具体的安装步骤很简单，可以参照[官方网站](http://thelittletyper.com)上的指示。这里说几个让开发环境更易用的设置。一是安装成功后可以在 View 菜单设置一下 layout 和 toolbar：
+Pie 是一个用 [Racket](https://racket-lang.org/) 开发的语言，所以它的开发环境也是基于 DrRacket。具体的安装步骤很简单，可以参照[官方网站](http://thelittletyper.com)上的指示。这里说几个让开发环境更易用的设置。一是 DrRacket 安装成功后可以在 View 菜单设置一下 layout 和 toolbar：
 
 ![conf-layout](/dt/conf1.png)
 ![conf-toolbar](/dt/conf2.png)
@@ -141,7 +141,7 @@ Nat ::= zero
 Nat ::= (add1 Nat)
 ```
 
-用这种方式定义出来的自然数又叫做[皮亚诺数（Peano number）](https://wiki.haskell.org/Peano_numbers)。当然这种表示方式写起来有些繁琐，所以 Pie 也提供了更便捷的语法：可以直接把自然数写作数字，例如`(add1 (add1 zero))`和`2`就表示的是同一个自然数。对于自然数 Pie 提供了多个可供使用的 eliminator。具体使用哪个取决于要解决的问题。比如现在要写一个类型为`(-> Nat Nat)`的函数`pred`，规定它对于自然数`0`返回`0`，对于其他自然数返回比自身小一的数：
+用这种方式定义出来的自然数又叫做[皮亚诺数（Peano number）](https://wiki.haskell.org/Peano_numbers)。当然这种表示方式写起来有些繁琐，所以 Pie 也提供了更便捷的语法：可以直接把自然数写作数字，例如`(add1 (add1 zero))`和`2`就表示的是同一个自然数。对于自然数， Pie 提供了多个可供使用的 eliminator。具体使用哪个取决于要解决的问题。比如现在要写一个类型为`(-> Nat Nat)`的函数`pred`，规定它对于自然数`0`返回`0`，对于其他自然数返回比自身小一的数：
 
 ```pie
 (claim pred
@@ -155,13 +155,20 @@ Nat ::= (add1 Nat)
         n-1))))
 ```
 
-函数`pred`用到的 eliminator 是 [which-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._which-.Nat%29%29)。`which-Nat`的调用方式是`(which-Nat target base step)`，它的值由三个参数决定。如果用`X`指代`which-Nat`的返回值类型，那么`target`的类型是`Nat`，`base`的类型是`X`，而`step`是一个类型为`(-> Nat X)`的函数。
+函数`pred`用到的 eliminator 是 [which-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._which-.Nat%29%29)。`which-Nat`的使用方式是`(which-Nat target base step)`，它的值由三个参数决定。如果用`X`指代`which-Nat`的返回值类型，那么`target`的类型是`Nat`，`base`的类型是`X`，而`step`是一个类型为`(-> Nat X)`的函数。
 
 ![which-Nat](/dt/which-Nat.png)
 
 当`target`等于`0`时，`base`的值即为`which-Nat`的值；如果`target`不为`0`，即`target`可以表示成形如`(add1 n-1)`的自然数（这里的`n-1`是一个普通的标识符，不是`n`减`1`的表达式），这时`which-Nat`的值等于`step`函数作用于`n-1`（即比`target`小`1`的自然数）所得到的值。
 
 在上述函数`pred`中，`which-Nat`的`target`是`pred`的参数`n`，`base`是`0`，`step`是函数`(λ (n-1) n-1)`。所以当`n`等于`0`时，`which-Nat`返回`base`的值，`0`；当`n`大于`0`或者说`n`等于`(add1 n-1)`时，`which-Nat`返回的就是`(step n-1)`的值，即参数`n-1`本身。
+
+```pie
+> (pred 10086)
+(the Nat 10085)
+> (pred 0)
+(the Nat 0)
+```
 
 如果熟悉所谓的函数式语言，可以看出来`which-Nat`其实就是这些语言里的 pattern matching（虽然并不完全等同，后边会说到区别在哪）。如果用 Idris 实现`pred`的话，会是这个样子：
 
@@ -171,7 +178,7 @@ pred Z = Z
 pred (S k) = k
 ```
 
-在 Idris 里，`Z`和`S k`分别是`Nat`类型的两个 constructor，等同于 Pie 里的`zero`和`(add1 n)`。后两行的两个 pattern matching 的分支也对应于`which-Nat`的`base`和`step`。前面说到的`which-Nat`和 pattern matching 的区别指的是，在常规的 pattern matching 中可以对函数递归调用，而 Pie 并不允许用户定义函数对自身的递归调用，目的是为了保证所有的函数都是 [**total**](https://en.wikipedia.org/wiki/Partial_function#Total_function) 的。举一个实现自然数加法运算的函数为例，在支持递归调用的语言比如 Idris 中可以这样实现（递归在最后一行）：
+在 Idris 里，`Z`和`S k`分别是`Nat`类型的两个 constructor，等同于 Pie 里的`zero`和`(add1 n)`。后两行的两个 pattern matching 的分支也对应于`which-Nat`的`base`和`step`。前面说到的`which-Nat`和 pattern matching 的区别指的是，在常规的 pattern matching 中可以对函数递归调用，而 Pie 并不允许用户定义的函数对自身的递归调用，这个限制的目的是为了保证所有的函数都是 [**total**](https://en.wikipedia.org/wiki/Partial_function#Total_function) 的。举实现自然数加法运算的函数为例，在支持递归调用的语言比如 Idris 中可以这样实现（递归在最后一行）：
 
 ```Idris
 plus : Nat -> Nat -> Nat
@@ -193,7 +200,7 @@ plus (S k) m = S (plus k m)
         (add1 (+ n-1 m)))))) ; error: Unknown variable +
 ```
 
-不幸的是如果把上面这段程序输入到定义区域，DrRacket 会在最后一行提示 “Unknown variable +”。所以我们只能改成使用“内置”了递归的 eliminator`rec-Nat`：
+不幸的是如果把上面这段程序输入到定义区域，DrRacket 会在最后一行提示 “Unknown variable +”。所以我们只能改成使用“内置”了递归的 eliminator，`rec-Nat`：
 
 ```Pie
 (claim +
@@ -207,11 +214,13 @@ plus (S k) m = S (plus k m)
         (add1 n-1+m)))))
 ```
 
-[rec-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._rec-.Nat%29%29) 和`which-Nat`类似，接受的三个参数也是`target`、`base`和`step`，而且当`target`等于`0`时也是把`base`作为自身的值返回。
+[rec-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._rec-.Nat%29%29) 和`which-Nat`类似，接受的三个参数也是`target`、`base`和`step`，而且当`target`等于`0`时同样把`base`作为自身的值返回。
 
 ![rec-Nat](/dt/rec-Nat.png)
 
-不同的是`rec-Nat`的`step`参数类型是`(-> Nat X X)`。当`target`可以表示成`(add1 n-1)`的非零自然数时，`step`的两个参数分别是`n-1`和`(rec-Nat n-1 base step)`。也就是说`rec-Nat`内置了对自身的递归调用，作为`rec-Nat`的使用者只需要知道`step`的**第一个参数是比当前的非零`target`小一的自然数，第二个参数等于把第一个参数作为新的`target`传递给递归的`rec-Nat`所得到的值**。对于上面的加法例子，`step`的第二个参数就是比`n`小一的自然数与`m`的和。为了加深对`rec-Nat`的理解，我们可以模拟一下解释器对`(+ 2 1)`的求值过程。当解释器遇到表达式`(+ 2 1)`时，首先会判断这是一个函数调用，所以第一步是把函数名替换成实际的函数定义：
+不同的是`rec-Nat`的`step`参数类型是`(-> Nat X X)`。当`target`可以表示成`(add1 n-1)`的非零自然数时，`step`的两个参数分别是`n-1`和`(rec-Nat n-1 base step)`。也就是说`rec-Nat`内置了对自身的递归调用，作为`rec-Nat`的使用者只需要知道`step`的**第一个参数是比当前的非零`target`小一的自然数，第二个参数等于把第一个参数作为新的`target`传递给递归的`rec-Nat`所得到的值**。对于上面的加法例子，`step`的第二个参数就是比`n`小一的自然数与`m`的和。
+
+为了加深对`rec-Nat`的理解，我们可以模拟一下解释器对`(+ 2 1)`的求值过程。当解释器遇到表达式`(+ 2 1)`时，首先会判断这是一个函数调用，所以第一步把函数名替换成实际的函数定义：
 
 ```pie
 ((λ (n m)
@@ -231,7 +240,7 @@ plus (S k) m = S (plus k m)
     (add1 n-1+m)))
 ```
 
-因为`target`等于`(add1 1)`是一个非零自然数，所以`rec-Nat`的值就等于对`step`函数调用后的值（将`step`函数体中的`n-1+m`替换成对`rec-Nat`的递归调用）：
+因为`target`等于非零自然数`2`，也就是`(add1 1)`，所以`rec-Nat`的值就等于对`step`函数调用后的值（将`step`的函数体`(add1 n-1+m)`中的`n-1+m`替换成对`rec-Nat`的递归调用）：
 
 ```pie
 (add1
@@ -262,13 +271,112 @@ plus (S k) m = S (plus k m)
 
 这样就得到了最后的结果`3`。
 
-对`Nat`类型的介绍占了比较长的篇幅是因为它是 Pie 语言的核心类型，理解了`Nat`以及配套的 eliminator 后，再理解其他的复合类型会更容易些。接下来要说的就是 Pie 语言里的几种依赖类型。
+#### 柯里化 Currying
 
-### 依赖于类型的类型 List
+虽然前面介绍函数时说函数是可以接受多个参数的（`(lambda (x1 x2 ...) e1 e2 ...)`），但其实本质上 Pie 的函数只接受一个参数。用户之所以可以定义出接受多个参数的函数，是因为 Pie 的解释器会对函数作一个叫做 [currying](https://en.wikipedia.org/wiki/Currying) 的处理。比如这四个函数：
 
+```pie
+(claim currying-test1
+  (-> Atom Atom
+    Atom))
+(define currying-test1
+  (λ (a b)
+    b))
+
+(claim currying-test2
+  (-> Atom Atom
+    Atom))
+(define currying-test2
+  (λ (a)
+    (λ (b)
+      b)))
+
+(claim currying-test3
+  (-> Atom
+    (-> Atom
+      Atom)))
+(define currying-test3
+  (λ (a b)
+    b))
+
+(claim currying-test4
+  (-> Atom
+    (-> Atom
+      Atom)))
+(define currying-test4
+  (λ (a)
+    (λ (b)
+      b)))
+```
+
+这几个函数无论是被声明成“接受两个`Atom`参数，返回值类型为`Atom`”（currying-test1、currying-test2 的情况），还是“接受一个`Atom`参数，返回一个类型为`(-> Atom Atom)`的函数”（currying-test3、currying-test4 的情况），也无论声明类型的形式和函数定义的形式是否一致（1、4 一致，2、3 不一致），在 Pie 的解释器看来都是完全相同的：
+
+```pie
+> currying-test1
+(the (→ Atom Atom
+       Atom)
+  (λ (a b)
+    b))
+
+> currying-test2
+(the (→ Atom Atom
+       Atom)
+  (λ (a b)
+    b))
+
+> currying-test3
+(the (→ Atom Atom
+       Atom)
+  (λ (a b)
+    b))
+
+> currying-test4
+(the (→ Atom Atom
+       Atom)
+  (λ (a b)
+    b))
+```
+
+知道了这一点我们就可以运用所谓的 [partial application](https://en.wikipedia.org/wiki/Partial_application) 来从已有的函数生成出其他“固定”了某些参数的值的新函数。比如可以从前述的加法函数`+`得到把参数加一的新函数：
+
+```pie
+(claim plus-one
+  (-> Nat
+    Nat))
+(define plus-one
+  (+ 1))
+
+> (plus-one 2)
+(the Nat 3)
+```
+
+用了比较长的篇幅来介绍 Pie 的几个基础类型，接下来要说的就是 Pie 语言里的几种依赖类型。
+
+### 依赖于类型的类型：List
+
+如果熟悉 Java 的 generics 或者 ML 的 polymorphism 的话，应该会很容易理解 Pie 的 [List](https://docs.racket-lang.org/pie/index.html#%28part._.Lists%29) 类型。在 Pie 中，若`E`是一个类型则`(List E)`是一个 List 类型，代表一类元素类型都是`E`的 List。`(List Nat)`、`(List (-> Nat Atom))`和`(List (List Atom))`都是 List 类型，但是`(List 1)`和`(List '你好)`不是合法的类型。
+
+List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::`接受两个参数`e`、`es`，如果`e`和`es`的类型分别为`E`和`(List E)`，则`(:: e es)`构造的是类型为`(List E)`比`es`多一个元素`e`的 List。List 类型可以用归纳法描述如下：
+
+```code
+(List E) ::= nil
+(List E) ::= (:: E (List E))
+```
+
+可以看出来 List 的 constructor 和`Nat`的很相似：`nil`对应于`zero`，`::`对应于`add1`。下面是构造一个`(List Atom)`的示例：
+
+```pie
+(claim philosophers
+  (List Atom))
+(define philosophers
+  (:: 'Descartes
+    (:: 'Hume
+      (:: 'Kant nil))))
+```
 
 
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
 [^3]: 在 DrRacket 中可以通过快捷键 ⌘-\ 输入字母 λ。
+[^4]: `::` 读作 cons（/ˈkɑnz/），继承自 Lisp 语言。
