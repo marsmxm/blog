@@ -10,21 +10,21 @@ tags: [dependent type, idris, pie, coq]
 
 ## 什么是依赖类型
 
-程序语言中的类型描述的是程序的行为，可以保证程序在运行时不会出现某一类的错误行为。一般的静态类型语言对类型和值有明确的区分，对于类型信息可以出现在哪也有严格的限制。而在支持依赖类型（dependent type）的语言里，类型和值之间的界限变得模糊，类型可以像值一样被计算（即所谓的 first-class 类型 [^1]），同时值也可以出现在类型信息里，依赖类型的“依赖”两个字指的就是类型可以依赖于值。因此类型和值的关系不再是单向的，两者变得可以互相描述了。这样的好处一是类型系统变得更加强大，可以检测并阻止更多的错误类型让程序更可靠；二是有了依赖类型之后，我们甚至可以让计算机像运行传统的计算类程序一样来运行数学证明 [^2]。
+程序语言中的类型描述的是程序的行为，用来保证程序在运行时不会出现某一类的错误行为。一般的静态类型语言对类型和值有明确的区分，对于类型信息可以出现在哪也有严格的限制。而在支持依赖类型（dependent type）的语言里，类型和值之间的界限变得模糊，类型可以像值一样被计算（即所谓的 first-class 类型 [^1]），同时值也可以出现在类型信息里，依赖类型的“依赖”两个字指的就是类型可以依赖于值。因此类型和值的关系不再是单向的，两者变得可以互相描述了。这样的好处一是类型系统变得更加强大，可以检测并阻止更多的错误类型，让程序更可靠；二是有了依赖类型之后，我们甚至可以让计算机像运行传统的计算类程序一样来运行数学证明 [^2]。
 
-为了对依赖类型有一个更直观的理解，举一个假想的例子。假如 Java 中加入了对依赖类型的支持，那么我们以 Java 的数组类型为例，可以让它包含更多的信息，例如数组的长度：
+为了对依赖类型有一个直观的感受，举一个假想的例子。假如 Java 中加入了对依赖类型的支持，那么以 Java 的数组类型为例，可以让它包含更多的信息，比如数组的长度：
 
 ```java
 String[3] threeNames = {"张三", "赵四", "成吉思汗"}; // 虚构的语法
 ```
 
-这么做的好处是，所有围绕于数组类型的函数或类现在都可以在类型信息中包含更具体的对行为的描述。比如合并两个数组的函数`concat`的签名可以写成：
+这么做的好处是，所有围绕于数组类型的方法现在都可以在类型信息中包含更具体的对行为的描述。比如合并两个数组的函数`concat`的签名可以写成：
 
 ```java
 String[n + m] concat(String[n] start, String[m] end) {...} // 虚构的语法
 ```
 
-这里通过类型就可以知道`concat`返回的数组的长度是两个参数数组长度的和。这样不仅程序变得更易读，所有可以借由数组长度反映出来的程序错误都能在运行前被检测出来（后面会有实例说明）。再举一个 first-class 类型的例子，下面是用 Idris 写的一个程序片段，Idris 是一个支持依赖类型、和 Hashkell 非常接近的语言。
+这里通过类型就可以知道`concat`返回的数组的长度是两个参数数组长度的和。这样不仅程序变得更易读，所有可以借由数组长度反映出来的程序错误都能在运行前被检测出来（后面会有实例说明）。再举一个 first-class 类型的例子，下面是用 [Idris](https://www.idris-lang.org/) 写的一个程序片段，Idris 是一个支持依赖类型、和 Hashkell 非常接近的语言。
 
 ```idris
 StringOrInt : Bool -> Type
@@ -110,7 +110,7 @@ Pie 的语法类似于 Lisp 的各种方言（Scheme，Racket 和 Clojure 等）
     any-atom))
 ```
 
-这里先是声名这个函数的类型：接受一个`Atom`类型的值作为参数，然后返回一个`Atom`类型的值。接着就是函数`echo`的具体定义，无论传入什么`Atom`都原样返回。对于函数来说 eliminator 只有一个，那就是对函数的调用，只能借由这唯一的途径来使用定义好的函数。函数的调用语法是，`(函数名或匿名函数 参数1 参数2 ...)`：
+这里先是声名这个函数的类型：接受一个`Atom`类型的值作为参数，然后返回一个`Atom`类型的值。接着就是函数`echo`的具体定义：无论传入什么`Atom`都原样返回。对于函数来说 eliminator 只有一个，那就是对函数的调用，只能借由这唯一的途径来使用定义好的函数。函数的调用语法是，`(函数名或匿名函数 参数1 参数2 ...)`：
 
 ```pie
 > (echo '你好)
@@ -141,7 +141,7 @@ Nat ::= zero
 Nat ::= (add1 Nat)
 ```
 
-用这种方式定义出来的自然数又叫做[皮亚诺数（Peano number）](https://wiki.haskell.org/Peano_numbers)。当然这种表示方式写起来有些繁琐，所以 Pie 也提供了更便捷的语法：可以直接把自然数写作数字，例如`(add1 (add1 zero))`和`2`就表示的是同一个自然数。对于自然数， Pie 提供了多个可供使用的 eliminator。具体使用哪个取决于要解决的问题。比如现在要写一个类型为`(-> Nat Nat)`的函数`pred`，规定它对于自然数`0`返回`0`，对于其他自然数返回比自身小一的数：
+用这种方式定义出来的自然数又叫做[皮亚诺数（Peano number）](https://wiki.haskell.org/Peano_numbers)。当然这种表示方式写起来有些繁琐，所以 Pie 也提供了更便捷的语法：可以直接把自然数写作数字，例如`(add1 (add1 zero))`和`2`就表示的是同一个自然数。对于自然数， Pie 提供了多个可供使用的 eliminator。具体使用哪个取决于要解决的问题。比如定义一个类型为`(-> Nat Nat)`的函数`pred`，规定它对于自然数`0`返回`0`，对于其他自然数返回比自身小一的数：
 
 ```pie
 (claim pred
@@ -155,11 +155,11 @@ Nat ::= (add1 Nat)
         n-1))))
 ```
 
-函数`pred`用到的 eliminator 是 [which-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._which-.Nat%29%29)。`which-Nat`的使用方式是`(which-Nat target base step)`，它的值由三个参数决定。如果用`X`指代`which-Nat`的返回值类型，那么`target`的类型是`Nat`，`base`的类型是`X`，而`step`是一个类型为`(-> Nat X)`的函数。
+函数`pred`用到的 eliminator 是 [which-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._which-.Nat%29%29)。`which-Nat`的使用方式是`(which-Nat target base step)`，它的值由`target`、`base`和`step`三个参数决定。如果用`X`指代`which-Nat`的返回值类型，那么`target`的类型是`Nat`，`base`的类型是`X`，而`step`是一个类型为`(-> Nat X)`的函数。
 
 ![which-Nat](/dt/which-Nat.png)
 
-当`target`等于`0`时，`base`的值即为`which-Nat`的值；如果`target`不为`0`，即`target`可以表示成形如`(add1 n-1)`的自然数（这里的`n-1`是一个普通的标识符，不是`n`减`1`的表达式），这时`which-Nat`的值等于`step`函数作用于`n-1`（即比`target`小`1`的自然数）所得到的值。
+当`target`等于`0`时，`base`的值即为`which-Nat`的值；如果`target`不为`0`即`target`可以表示成形如`(add1 n-1)`的自然数（这里的`n-1`是一个普通的标识符，不是`n`减`1`的表达式），这时`which-Nat`的值等于`step`函数作用于`n-1`（即比`target`小`1`的自然数）所得到的值。
 
 在上述函数`pred`中，`which-Nat`的`target`是`pred`的参数`n`，`base`是`0`，`step`是函数`(λ (n-1) n-1)`。所以当`n`等于`0`时，`which-Nat`返回`base`的值，`0`；当`n`大于`0`或者说`n`等于`(add1 n-1)`时，`which-Nat`返回的就是`(step n-1)`的值，即参数`n-1`本身。
 
@@ -197,7 +197,7 @@ plus (S k) m = S (plus k m)
     (which-Nat n
       m
       (λ (n-1)
-        (add1 (+ n-1 m)))))) ; error: Unknown variable +
+        (add1 (+ n-1 m)))))) ; 错误: Unknown variable +
 ```
 
 不幸的是如果把上面这段程序输入到定义区域，DrRacket 会在最后一行提示 “Unknown variable +”。所以我们只能改成使用“内置”了递归的 eliminator，`rec-Nat`：
@@ -218,7 +218,7 @@ plus (S k) m = S (plus k m)
 
 ![rec-Nat](/dt/rec-Nat.png)
 
-不同的是`rec-Nat`的`step`参数类型是`(-> Nat X X)`。当`target`可以表示成`(add1 n-1)`的非零自然数时，`step`的两个参数分别是`n-1`和`(rec-Nat n-1 base step)`。也就是说`rec-Nat`内置了对自身的递归调用，作为`rec-Nat`的使用者只需要知道`step`的**第一个参数是比当前的非零`target`小一的自然数，第二个参数等于把第一个参数作为新的`target`传递给递归的`rec-Nat`所得到的值**。对于上面的加法例子，`step`的第二个参数就是比`n`小一的自然数与`m`的和。
+不同的是`rec-Nat`的`step`参数类型是`(-> Nat X X)`。当`target`可以表示成`(add1 n-1)`的非零自然数时，`step`的两个参数分别是`n-1`和`(rec-Nat n-1 base step)`。也就是说`rec-Nat`内置了对自身的递归调用，作为`rec-Nat`的使用者只需要知道`step`的**第一个参数是比当前的非零`target`小一的自然数，第二个参数等于把第一个参数作为新的`target`传递给递归的`rec-Nat`所得到的值**。在上面的加法例子中，`step`函数体里只用到了第二个参数，即比`n`小一的自然数与`m`的和。
 
 为了加深对`rec-Nat`的理解，我们可以模拟一下解释器对`(+ 2 1)`的求值过程。当解释器遇到表达式`(+ 2 1)`时，首先会判断这是一个函数调用，所以第一步把函数名替换成实际的函数定义：
 
@@ -271,9 +271,9 @@ plus (S k) m = S (plus k m)
 
 这样就得到了最后的结果`3`。
 
-#### 柯里化 Currying
+#### 柯里化
 
-虽然前面介绍函数时说函数是可以接受多个参数的（`(lambda (x1 x2 ...) e1 e2 ...)`），但其实本质上 Pie 的函数只接受一个参数。用户之所以可以定义出接受多个参数的函数，是因为 Pie 的解释器会对函数作一个叫做 [currying](https://en.wikipedia.org/wiki/Currying) 的处理。比如这四个函数：
+虽然前面介绍函数时说函数是可以接受多个参数的（`(lambda (x1 x2 ...) e1 e2 ...)`），但其实本质上 Pie 的函数只接受一个参数。用户之所以可以定义出接受多个参数的函数，是因为 Pie 的解释器会对函数作一个叫做 [柯里化（currying）](https://en.wikipedia.org/wiki/Currying) 的处理。比如这四个函数：
 
 ```pie
 (claim currying-test1
@@ -337,7 +337,7 @@ plus (S k) m = S (plus k m)
     b))
 ```
 
-知道了这一点我们就可以运用所谓的 [partial application](https://en.wikipedia.org/wiki/Partial_application) 来从已有的函数生成出其他“固定”了某些参数的值的新函数。比如可以从前述的加法函数`+`得到把参数加一的新函数：
+知道了这一点我们就可以运用所谓的 [partial application](https://en.wikipedia.org/wiki/Partial_application) 从已有的函数生成出其他“固定”了某些参数的值的新函数。比如可以从前述的加法函数`+`得到把参数加一的新函数：
 
 ```pie
 (claim plus-one
@@ -354,7 +354,7 @@ plus (S k) m = S (plus k m)
 
 ### 依赖于类型的类型：List
 
-如果熟悉 Java 的 generics 或者 ML 的 polymorphism 的话，应该会很容易理解 Pie 的 [List](https://docs.racket-lang.org/pie/index.html#%28part._.Lists%29) 类型。在 Pie 中，若`E`是一个类型则`(List E)`是一个 List 类型，代表一类元素类型都是`E`的 List。`(List Nat)`、`(List (-> Nat Atom))`和`(List (List Atom))`都是 List 类型，但是`(List 1)`和`(List '你好)`不是合法的类型。
+如果熟悉 Java 的泛型（generics）或者 ML 的多态（polymorphism）的话，应该会很容易理解 Pie 的 [List](https://docs.racket-lang.org/pie/index.html#%28part._.Lists%29) 类型。在 Pie 中，若`E`是一个类型则`(List E)`是一个 List 类型，代表一类元素类型都是`E`的 List。`(List Nat)`、`(List (-> Nat Atom))`和`(List (List Atom))`都是 List 类型，但是`(List 1)`和`(List '你好)`不是合法的类型。
 
 List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::`接受两个参数`e`、`es`，如果`e`和`es`的类型分别为`E`和`(List E)`，则`(:: e es)`构造的是类型为`(List E)`比`es`多一个元素`e`的 List。List 类型可以用归纳法描述如下：
 
@@ -374,9 +374,180 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
       (:: 'Kant nil))))
 ```
 
+要使用或者处理 List 类型的值，同样也需要对应的 eliminator。List 版的“内置”了递归的 eliminator 叫 [rec-List](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._rec-.List%29%29)，它也遵循相同的使用模式，即`(rec-List target base step)`：
+
+![rec-Nat](/dt/rec-List.png)
+
+类似地，当`target`为`nil`时，`base`的值就作为整个表达式的值；当`target`不为`nil`而可以写作`(:: e es)`时，`step`的返回值则作为整个表达式的最终结果，此时`step`的三个参数分别是`e`、`es`和`(rec-List es base step)`。继续通过一个例子来详细说明`rec-List`的用法，写一个返回 List 长度的函数`length`。如果想把`length`定义成可以作用于元素类型任意的 List（`(List Nat)`、`(List Atom)`等），进而将其声明如下的话，
+
+```pie
+(claim length
+  (-> (List E) ; 错误: Not a type
+    Nat))
+```
+
+解释器会在第二行提示“Not a type”的错误，因为在解释器看来`E`没有被声明过，并不知道它是什么，所以`(List E)`也就不是一个合法的类型。这时我们需要一个新表达式用来在类型声明中引入变量，这个表达式叫作`Pi`（在程序中也可以用希腊字母`Π`[^5] 代替）。`length`的新的类型声明如下：
+
+```pie
+(claim length
+  (Pi ((E U))
+    (-> (List E)
+      Nat)))
+```
+
+`Pi`表达式的第一个列表里可以写多个类型变量`(Pi ((x X) (y Y) ...) ...)`，其中`x`、`y`是变量名，`X`和`Y`是变量的类型。`length`的类型声明里只需要一个变量`E`，它的类型`U`代表的是**类型的类型**（相当于前面 Idris 程序片段里的`Type`）。因为 List 类型必须是以 (List 类型) 的形式存在，所以这里`E`的取值范围必须是类型，即`U`。如果对比 Java 的泛型，
+
+```java
+<E> int length(List<E> lst) {...}
+```
+
+可能会觉得`Pi`表达式只是实现了类似的功能，但其实`Pi`可以做的更多。开头介绍的箭头型的函数类型只是`Pi`表达式的一个简写形式，所以`Pi`本质上声明的是一个函数，意味着列表里可以放入任何类型的变量。比如
+
+```pie
+(claim fun1
+  (-> Atom Nat
+    Atom))
+```
+
+也可以写成
+
+```pie
+(claim fun1
+  (Π ((a Atom)
+      (n Nat))
+    Atom))
+```
+
+只不过这里变量`a`和`n`没有在后面的类型声明里用到，所以写作箭头型的就足够。下面是用了`Pi`表达式后，完整的`length`定义：
+
+```pie
+(claim length
+  (Π ((E U))
+    (-> (List E)
+      Nat)))
+(define length
+  (λ (E lst)
+    (rec-List lst
+      0
+      (λ (e es length-es)
+        (add1 length-es)))))
+```
+
+`Π`和箭头类型一起声明了一个接受两个参数返回一个`Nat`的函数，定义中对应的两个参数一个是类型为任意类型`U`的参数`E`，另一个是类型为`(List E)`的参数`lst`。函数体中只用到了第二个参数`lst`，把它作为`target`传给`rec-List`表达式。当`lst`为`nil`时长度为`0`；若`lst`可以表示为`(:: e es)`形式的非`nil`List，则`step`函数的第三个参数是把`es`作为新的`target`的递归`rec-List`表达式`(rec-List es 0 step)`的值`length-es`，因为`es`比`lst`少一个元素`e`，所以`lst`长度等于`es`的长度加一，即`(add1 length-es)`。
+
+有了`length`就可以得到任意 List 的长度了：
+
+```pie
+> (length Atom philosophers)
+(the Nat 3)
+
+> (length Nat
+    (:: 1 (:: 2 (:: 3 (:: 4 nil)))))
+(the Nat 4)
+```
+
+类似的也可以通过`rec-List`定义合并 List 的函数`append`：
+
+```pie
+(claim append
+  (Π ((E U))
+    (-> (List E)
+        (List E)
+      (List E))))
+(define append
+  (λ (E)
+    (λ (start end)
+      (rec-List start
+        end
+        (λ (e es append-es)
+          (:: e append-es))))))
+
+(claim existentialists
+  (List Atom))
+(define existentialists
+  (:: 'Kierkegaard
+    (:: 'Sartre
+      (:: 'Camus nil))))
+
+> (append Atom philosophers existentialists)
+(the (List Atom)
+  (:: 'Descartes
+    (:: 'Hume
+      (:: 'Kant
+        (:: 'Kierkegaard
+          (:: 'Sartre
+            (:: 'Camus nil)))))))
+```
+
+假设我们没能正确地实现`append`，比如错误地定义了`step`：
+
+```pie
+(claim append-wrong
+  (Π ((E U))
+    (-> (List E)
+        (List E)
+      (List E))))
+(define append-wrong
+  (λ (E)
+    (λ (start end)
+      (rec-List start
+        end
+        (λ (e es append-es)
+          append-es))))) ;; 错误地忽略了 e
+```
+
+解释器仍然会接受这个函数定义，因为从类型系统的角度来看`append-wrong`仍然是“正确”的，它确实返回了类型是`(List E)`的值，即使这个值不是我们所预期的：
+
+```pie
+> (append-wrong Atom philosophers existentialists)
+(the (List Atom)
+  (:: 'Kierkegaard
+    (:: 'Sartre
+      (:: 'Camus nil))))
+```
+
+如果想让解释器帮助我们判断程序是否正确，只能通过某种形式的“测试”来实现：
+
+```pie
+(check-same Nat
+  (length Atom
+    (append-wrong Atom philosophers existentialists))
+  (+ (length Atom philosophers)
+     (length Atom existentialists)))
+```
+
+这里我们通过`append`函数应有的一个属性—— append 后得到的 List 的长度等于两个参数 List 长度的和——来检验函数的正确性。`check-same`表达式的使用方式是`(check-same type expr1 expr2)`，如果`expr1`和`expr2`不是相同的类型为`type`的值，解释器会“静态”地指出这个错误：
+
+![check-same](/dt/check-same.png)
+
+下面要介绍的这个新类型可以说是有长度属性的 List，和这个新类型相关的函数都可以借助参数和返回值的类型来自动实现类似于上面程序片段中的对于长度属性的检查。
+
+### 依赖于值的类型：Vec
+
+文章开头假想的那个 Java 的有长度属性的数组类型其实就是对 Vec 类型的模仿。Vec 类型写作`(Vec E len)`，其中`E`和 List 类型中的一样，是一个类型为`U`的值，代表元素的类型；而`len`是一个`Nat`类型的值，代表 Vec 的长度。所以开头的`three-names`可以声明为：
+
+```pie
+(claim three-names
+  (Vec Atom 3))
+```
+
+Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对应于 List 的`nil`和`::`。所以`three-names`可以定义为：
+
+```pie
+(define three-names
+  (vec:: '张三
+    (vec:: '赵四
+      (vec:: '成吉思汗 vecnill))))
+```
+
+如果不小心多写了一个`vec::`，解释器会指出这个错误，虽然错误描述不是很明确：
+
+![err2](/dt/err2.png)
 
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
 [^3]: 在 DrRacket 中可以通过快捷键 ⌘-\ 输入字母 λ。
 [^4]: `::` 读作 cons（/ˈkɑnz/），继承自 Lisp 语言。
+[^5]: 可以通过下图的菜单导入[这个文件](/dt/keybindings.rkt)，之后就可以直接在 DrRacket 里按 Ctrl-[ 输入字母 Π。
+      ![keybind](/dt/keybind.png)
