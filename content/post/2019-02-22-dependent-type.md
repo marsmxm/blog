@@ -10,7 +10,7 @@ tags: [dependent type, idris, pie, coq]
 
 ## 什么是依赖类型
 
-一般的静态类型语言对类型和值有明确的区分，对于类型信息可以出现在哪也有严格的限制。而在支持依赖类型（dependent type）的语言里，类型和值之间的界限变得模糊，类型可以像值一样被计算（即所谓的 first-class 类型 [^1]），同时值也可以出现在类型信息里，依赖类型的“依赖”两个字指的就是类型可以依赖于值。因此类型和值的关系不再是单向的，两者变得可以互相描述了。这样的好处一是类型系统变得更加强大，可以检测并阻止更多的错误类型，让程序更可靠；二是有了依赖类型之后，我们甚至可以让计算机像运行传统的计算类程序一样来运行数学证明 [^2]。
+传统的静态类型语言对类型和值有明确的区分，对于类型信息可以出现在哪也有严格的限制。而在支持依赖类型（dependent type）的语言里，类型和值之间的界限变得模糊，类型可以像值一样被计算（即所谓的 first-class 类型 [^1]），同时值也可以出现在类型信息里，依赖类型的“依赖”两个字指的就是类型可以依赖于值。因此类型和值的关系不再是单向的，两者变得可以互相描述了。这样的好处一是类型系统变得更加强大，可以检测并阻止更多的错误类型，让程序更可靠；二是有了依赖类型之后，我们甚至可以让计算机像运行传统的计算类程序一样来运行数学证明 [^2]。
 
 为了对依赖类型有一个直观的感受，举一个假想的例子。假如 Java 中加入了对依赖类型的支持，那么以 Java 的数组类型为例，可以让它包含更多的信息，比如数组的长度：
 
@@ -140,7 +140,7 @@ Nat ::= zero
 Nat ::= (add1 Nat)
 ```
 
-用这种方式定义出来的自然数又叫做[皮亚诺数（Peano number）](https://wiki.haskell.org/Peano_numbers)。当然这种表示方式写起来有些繁琐，所以 Pie 也提供了更便捷的语法：可以直接把自然数写作数字，例如`(add1 (add1 zero))`和`2`就表示的是同一个自然数。对于自然数， Pie 提供了多个可供使用的 eliminator。具体使用哪个取决于要解决的问题。比如定义一个类型为`(-> Nat Nat)`的函数`pred`，规定它对于自然数`0`返回`0`，对于其他自然数返回比自身小一的数：
+用这种方式定义出来的自然数又叫做[皮亚诺数（Peano number）](https://wiki.haskell.org/Peano_numbers)。当然这种表示方式写起来有些繁琐，所以 Pie 也提供了更便捷的语法：可以直接把自然数写作数字，例如`zero`和`0`、`(add1 (add1 zero))`和`2`都是等价的。对于自然数， Pie 提供了多个可供使用的 eliminator。具体使用哪个取决于要解决的问题。比如定义一个类型为`(-> Nat Nat)`的函数`pred`，规定它对于自然数`0`返回`0`，对于其他自然数返回比自身小一的数：
 
 ```pie
 (claim pred
@@ -543,32 +543,32 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
 如果不小心多写了一个`vec::`，则声明的类型和实际定义的不一样，解释器就会指出这个错误，虽然错误描述不是很明确：
 ![err2](/dt/err2.png)
 
-在深入讨论 Vec 类型前需要再介绍另一个`Nat`类型的 eliminator，因为它与 Vec 类型有着非常密切的关系。仍然是通过一个例子来说明，假设定义一个函数`repeat`，它可以重复`n`次某个任意类型`E`的值`e`，返回的结果是一个长度`n`、元素类型`E`且所有元素都是`e`的 Vec。这个函数声明如下：
+在深入讨论 Vec 类型前需要再介绍另一个`Nat`类型的 eliminator，因为它与 Vec 类型有着非常密切的关系。仍然是通过一个例子来说明，假设定义一个函数`repeat`，它可以重复`count`次某个任意类型`E`的值`e`，返回的结果是一个长度为`count`、元素类型`E`且所有元素都是`e`的 Vec。这个函数声明如下：
 
 ```pie
 (claim repeat
   (Π ((E U)
-      (n Nat))
+      (count Nat))
     (-> E
-      (Vec E n))))
+      (Vec E count))))
 ```
 
-因为类型`E`和长度`n`在后面的类型声明中都会出现，所以放在了`Π`表达式的参数列表里。表达式`(-> E (Vec E n))`指的是一个接受一个类型为`E`的值作为参数，返回一个`(Vec E n)`的函数。假设我们用已有的`rec-Nat`来实现的话，大概会这样写：
+因为类型`E`和次数`count`在后面的类型声明中都会用到，所以被放在了`Π`表达式的参数列表里。表达式`(-> E (Vec E count))`指的是一个接受一个类型为`E`的值作为参数，返回一个`(Vec E count)`的函数。假设我们用已有的`rec-Nat`来实现的话，大概会这样写：
 
 ```pie
-;; initial try
+;; initial try, won't work
 (define repeat
-  (λ (E n)
+  (λ (E count)
     (λ (e)
-      (rec-Nat n
+      (rec-Nat count
         vecnil
-        (λ (n-1 repeat-n-1)
-          (vec:: e repeat-n-1))))))
+        (λ (c-1 repeat-c-1)
+          (vec:: e repeat-c-1))))))
 ```
 
-但是问题出在`rec-Nat`要求`base`、`step`以及整个`rec-Nat`表达式的值的类型必须一致，在上述定义中，`repeat`的声明类型即整个`rec-Nat`表达式的类型是`(Vec E n)`；`base`是类型为`(Vec E 0)`的`vecnil`；而`step`每次递归调用所返回的类型都不一样，在`target`从`1`到`n`变化的过程中，返回值也从`(Vec E 1)`变到`(Vec E n)`。所以解释器不会接受这个函数定义。
+但是问题出在`rec-Nat`要求`base`、`step`以及整个`rec-Nat`表达式的值的类型必须一致，在上述定义中，`repeat`的声明类型即整个`rec-Nat`表达式的类型是`(Vec E count)`；`base`是类型为`(Vec E 0)`的`vecnil`；而`step`每次递归调用所返回的类型都不一样，在`target`从`1`到`count`变化的过程中，返回值也从`(Vec E 1)`变到`(Vec E count)`。所以解释器不会接受这个函数定义。
 
-像 Vec 这样接受参数的类型在类型理论里被叫做 type family，根据传入的参数的不同，得到的类型也随着变化。所以上例中的`(Vec E 0)`、`(Vec E 1)`…… 在类型系统看来都是不同的类型。而类似于`E`这样不变的参数被称作 **parameter**，像`0`、`1`…… 这样变化着的参数被叫做 **index** [^6]。在 Pie 语言里处理包含不同 index 的一类类型时，需要用到的一类 eliminator 都以 ind- 开头（ind 是 inductive 的缩写）。在`repeat`函数中，因为 target 是`Nat`类型的，所以用到的 eliminator 是 [ind-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Nat%29%29)。`ind-Nat`除了接受和`rec-Nat`类似的`target`、`base`和`step`三个参数外，还需要一个额外的参数`motive`。
+像 Vec 这样接受参数的类型在类型理论里被叫做 type family，随着传入的参数的不同，得到的类型也在变化。所以上例中的`(Vec E 0)`、`(Vec E 1)`…… 在类型系统看来都是不同的类型。而类似于`E`这样不变的参数被称作 **parameter**，像`0`、`1`…… 这样变化着的参数被叫做 **index** [^6]。在 Pie 语言里处理包含不同 index 的一类类型时，需要用到的一类 eliminator 都以 ind- 开头（ind 是 inductive 的缩写）。在`repeat`函数中，因为 target 是`Nat`类型的，所以用到的 eliminator 是 [ind-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Nat%29%29)。`ind-Nat`除了接受和`rec-Nat`类似的`target`、`base`和`step`三个参数外，还需要一个额外的参数`motive`[^7]。
 ![ind-Nat](/dt/ind-Nat.png)
 `motive`的类型是`(-> Nat U)`，它根据传入的自然数参数返回一个对应的类型。在`ind-Nat`中，`target`的类型仍然为`Nat`；`base`的类型变成了`(motive zero)`，也就是调用时传入的函数`motive`作用于自然数`zero`时返回的类型；而`step`的类型要更复杂一些：
 
@@ -578,7 +578,71 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
     (motive (add1 n))))
 ```
 
-它接受两个类型分别为`Nat`和`(motive n)`的参数，返回一个类型为`(motive (add1 n))`的值。`step`的第一个参数是比当前`target`小一的自然数`n`，第二个是把`n`作为新的`target`递归调用`ind-Nat`——`(ind-Nat n motive base step)`——后得到的值。因为`(add1 n)`等于当前的`target`，所以`step`的返回值类型`(motive (add1 n))`和整个`ind-Nat`表达式的类型`(motive target)`也是相同的。
+它接受两个类型分别为`Nat`和`(motive n)`的参数，返回一个类型为`(motive (add1 n))`的值。`step`的第一个参数是比当前`target`小一的自然数`n`，第二个是把`n`作为新的`target`递归调用`ind-Nat`——`(ind-Nat n motive base step)`——后得到的值。因为`(add1 n)`等于当前的`target`，所以`step`的返回值类型`(motive (add1 n))`和整个`ind-Nat`表达式值的类型`(motive target)`也是相同的。现在可以着手用`ind-Nat`来实现`repeat`函数了。首先将`count`参数作为`target`传递给`ind-Nat`：
+
+```pie
+(claim repeat
+  (Π ((E U)
+      (count Nat))
+    (-> E
+      (Vec E count))))
+(define repeat
+  (λ (E count)
+    (λ (e)
+      (ind-Nat count    ; count 作为 target
+        TODO
+        TODO
+        TODO))))
+```
+
+接下来确定比较简单的`base`的值，当`count`为`0`时，`repeat`应该返回一个长度为`0`的`(Vec E 0)`，这样的 Vec 只有一个，就是`vecnil`：
+
+```pie
+(define repeat
+  (λ (E count)
+    (λ (e)
+      (ind-Nat count
+        TODO
+        vecnil          ; 类型为 (Vec E 0) 的 vecnil 作为 base
+        TODO))))
+```
+
+又因为`base`的类型其实是由`motive`函数决定的，即`(motive 0)`。所以从`base`的类型可以反推出`motive`应该是一个接受一个自然数`k`作为参数，返回类型`(Vec E k)`的函数。这里需要注意`motive`**返回的是类型`(Vec E k)`，而不是类型为`(Vec E k)`的值**，换句话说`motive`返回的是类型为`U`的值`(Vec E k)`。
+
+```pie
+(define repeat
+  (λ (E count)
+    (λ (e)
+      (ind-Nat count
+        (λ (k)          ; motive 函数
+          (Vec E k))
+        vecnil
+        TODO))))
+```
+
+有了`motive`之后，可以得到`step`的类型：
+
+```pie
+(Π ((c-1 Nat))            ; c-1 代表比 count 小一的自然数
+  (-> (Vec E c-1)         ; 即 (motive c-1)
+    (Vec E (add1 c-1))))  ; 即 (motive (add1 c-1))
+```
+
+为了让程序便于理解，可以把`step`作为一个独立的函数提到外面：
+
+```pie
+(claim step-repeat
+  (Π ((E U)
+      (c-1 Nat))
+  (-> (Vec E c-1)
+    (Vec E (add1 c-1)))))
+(define step-repeat
+  (λ (E c-1)
+    (λ (repeat-c-1)
+      TODO)))
+```
+
+提到外面之后`step-repeat`多了一个参数`E`，是因为到时候需要把类型参数`E`从`repeat`传递到`step-repeat`中。`repeat-c-1`参数代表的是把`count`减一后得到的自然数`c-1`作为新的`target`去递归调用`ind-Nat`所得到的类型为`(Vec E c-1)`的值。这个值比最后要返回的 Vec 长度少一
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
@@ -587,3 +651,4 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
 [^5]: 可以通过下图的菜单导入[这个文件](/dt/keybindings.rkt)，之后就可以直接在 DrRacket 里按 Ctrl-[ 输入字母 Π。
       ![keybind](/dt/keybind.png)
 [^6]: 关于 parameter 和 index 的更详细准确的区别可以参考 [stackoverflow 上的这个问题](https://stackoverflow.com/questions/24600256/difference-between-type-parameters-and-indices)。
+[^7]: motive 这个名字应该是来自[这篇论文](http://www.cs.ru.nl/F.Wiedijk/courses/tt-2010/tvftl/conor-elimination.pdf)
