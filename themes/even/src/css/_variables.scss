@@ -49,7 +49,7 @@ $global-font-size: 16px !default;
 $global-body-width: 800px !default;
 
 // Padding of container main
-$global-container-padding: 0 20px !default;
+$global-container-padding: 0 15px !default;
 
 // Default line height for all type. `$global-lineheight` is 24px while `$global-font-size` is 16px.
 $global-lineheight: 1.5 !default;
@@ -149,7 +149,7 @@ $post-nav-font-size: 18px !default;
 
 // ========== TOC ========== //
 // Width of the post toc.
-$post-toc-width: 200px !default;
+$post-toc-width: 210px !default;
 
 // Backgroud color of the post toc.
 $post-toc-backgroud: rgba($deputy-color, 0.6) !default;
@@ -158,10 +158,10 @@ $post-toc-backgroud: rgba($deputy-color, 0.6) !default;
 $post-toc-margin-left: $global-body-width - 15px !default;
 
 // Font size of the post toc title.
-$post-toc-title-size: 20px !default;
+$post-toc-title-size: 18px !default;
 
 // Font size of the post toc content.
-$post-toc-content: 15px !default;
+$post-toc-content: 13px !default;
 
 // List style of the post toc list.
 $post-toc-list-style: square !default;

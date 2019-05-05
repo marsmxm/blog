@@ -2,6 +2,7 @@
 title: "让 OpenWRT 下的空闲硬盘自动停转"
 date: 2012-04-14
 draft: false
+reward: false
 author: "Mu Xian Ming"
 
 categories: [I]

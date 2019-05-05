@@ -10,7 +10,7 @@ tags: [dependent type, idris, pie, coq]
 
 ## 什么是依赖类型
 
-程序语言中的类型描述的是程序的行为，用来保证程序在运行时不会出现某一类的错误行为。一般的静态类型语言对类型和值有明确的区分，对于类型信息可以出现在哪也有严格的限制。而在支持依赖类型（dependent type）的语言里，类型和值之间的界限变得模糊，类型可以像值一样被计算（即所谓的 first-class 类型 [^1]），同时值也可以出现在类型信息里，依赖类型的“依赖”两个字指的就是类型可以依赖于值。因此类型和值的关系不再是单向的，两者变得可以互相描述了。这样的好处一是类型系统变得更加强大，可以检测并阻止更多的错误类型，让程序更可靠；二是有了依赖类型之后，我们甚至可以让计算机像运行传统的计算类程序一样来运行数学证明 [^2]。
+一般的静态类型语言对类型和值有明确的区分，对于类型信息可以出现在哪也有严格的限制。而在支持依赖类型（dependent type）的语言里，类型和值之间的界限变得模糊，类型可以像值一样被计算（即所谓的 first-class 类型 [^1]），同时值也可以出现在类型信息里，依赖类型的“依赖”两个字指的就是类型可以依赖于值。因此类型和值的关系不再是单向的，两者变得可以互相描述了。这样的好处一是类型系统变得更加强大，可以检测并阻止更多的错误类型，让程序更可靠；二是有了依赖类型之后，我们甚至可以让计算机像运行传统的计算类程序一样来运行数学证明 [^2]。
 
 为了对依赖类型有一个直观的感受，举一个假想的例子。假如 Java 中加入了对依赖类型的支持，那么以 Java 的数组类型为例，可以让它包含更多的信息，比如数组的长度：
 
@@ -43,7 +43,7 @@ valToString x val = case x of
   False => val
 ```
 
-这段程序里的`StringOrInt`、`getStringOrInt`和`valToString`是三个函数，第 1、6、11 行分别声明的这三个函数的类型。`StringOrInt`接受一个布尔类型的参数，返回值的类型是`Type`（也就是**类型的类型**，因为类型也是一种值），当参数是`True`，返回`Int`类型，参数为`False`时，返回`String`类型。而在`getStringOrInt`的类型声明中可以看到它的返回值类型是`StringOrInt x`，也就是说返回值类型依赖于参数`x`的值：当`x`的值为`True`时，返回值类型是`StringOrInt True`的值，也就是`Int`；当`x`是`False`是，返回值类型就变成了`String`。第 6 行的类型声明体现了依赖类型的两个特性：
+这段程序里的`StringOrInt`、`getStringOrInt`和`valToString`是三个函数，第 1、6、11 行分别声明的这三个函数的类型。`StringOrInt`接受一个布尔类型的参数，返回值的类型是`Type`（也就是**类型的类型**，因为类型也是一种值），当参数是`True`，返回`Int`类型，参数为`False`时，返回`String`类型。而在`getStringOrInt`的类型声明中可以看到它的返回值类型是`StringOrInt x`，也就是说返回值类型依赖于参数`x`的值：当`x`的值为`True`时，返回值类型是`StringOrInt True`的值，也就是`Int`；当`x`是`False`是，返回值类型就变成了`String`。`getStringOrInt`的类型声明体现了依赖类型的两个特性：
 
 1. 类型中可以包括变量或者复杂的表达式，如`StringOrInt x`。
 2. 声明的类型可以处于一个动态的状态，最后具体是什么取决于所依赖的值。
@@ -125,7 +125,6 @@ Pie 的语法类似于 Lisp 的各种方言（Scheme，Racket 和 Clojure 等）
 ```
 
 另外，(the 类型 ...) 表达式也可以用来在解释器无法判断当前表达式的类型的情况下给予解释器一个提示：
-
 ![example-the](/dt/ex1.png)
 
 #### Atom
@@ -156,9 +155,7 @@ Nat ::= (add1 Nat)
 ```
 
 函数`pred`用到的 eliminator 是 [which-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._which-.Nat%29%29)。`which-Nat`的使用方式是`(which-Nat target base step)`，它的值由`target`、`base`和`step`三个参数决定。如果用`X`指代`which-Nat`的返回值类型，那么`target`的类型是`Nat`，`base`的类型是`X`，而`step`是一个类型为`(-> Nat X)`的函数。
-
 ![which-Nat](/dt/which-Nat.png)
-
 当`target`等于`0`时，`base`的值即为`which-Nat`的值；如果`target`不为`0`即`target`可以表示成形如`(add1 n-1)`的自然数（这里的`n-1`是一个普通的标识符，不是`n`减`1`的表达式），这时`which-Nat`的值等于`step`函数作用于`n-1`（即比`target`小`1`的自然数）所得到的值。
 
 在上述函数`pred`中，`which-Nat`的`target`是`pred`的参数`n`，`base`是`0`，`step`是函数`(λ (n-1) n-1)`。所以当`n`等于`0`时，`which-Nat`返回`base`的值，`0`；当`n`大于`0`或者说`n`等于`(add1 n-1)`时，`which-Nat`返回的就是`(step n-1)`的值，即参数`n-1`本身。
@@ -215,9 +212,7 @@ plus (S k) m = S (plus k m)
 ```
 
 [rec-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._rec-.Nat%29%29) 和`which-Nat`类似，接受的三个参数也是`target`、`base`和`step`，而且当`target`等于`0`时同样把`base`作为自身的值返回。
-
 ![rec-Nat](/dt/rec-Nat.png)
-
 不同的是`rec-Nat`的`step`参数类型是`(-> Nat X X)`。当`target`可以表示成`(add1 n-1)`的非零自然数时，`step`的两个参数分别是`n-1`和`(rec-Nat n-1 base step)`。也就是说`rec-Nat`内置了对自身的递归调用，作为`rec-Nat`的使用者只需要知道`step`的**第一个参数是比当前的非零`target`小一的自然数，第二个参数等于把第一个参数作为新的`target`传递给递归的`rec-Nat`所得到的值**。在上面的加法例子中，`step`函数体里只用到了第二个参数，即比`n`小一的自然数与`m`的和。
 
 为了加深对`rec-Nat`的理解，我们可以模拟一下解释器对`(+ 2 1)`的求值过程。当解释器遇到表达式`(+ 2 1)`时，首先会判断这是一个函数调用，所以第一步把函数名替换成实际的函数定义：
@@ -273,9 +268,11 @@ plus (S k) m = S (plus k m)
 
 #### 柯里化
 
-虽然前面介绍函数时说函数是可以接受多个参数的（`(lambda (x1 x2 ...) e1 e2 ...)`），但其实本质上 Pie 的函数只接受一个参数。用户之所以可以定义出接受多个参数的函数，是因为 Pie 的解释器会对函数作一个叫做 [柯里化（currying）](https://en.wikipedia.org/wiki/Currying) 的处理。比如这四个函数：
+虽然前面介绍函数时说函数是可以接受多个参数的（`(lambda (x1 x2 ...) e1 e2 ...)`），但其实本质上 Pie 的函数只接受一个参数。之所以可以定义出接受多个参数的函数，是因为 Pie 的解释器会对函数作一个叫做 [柯里化（currying）](https://en.wikipedia.org/wiki/Currying) 的处理。比如这四个函数：
 
 ```pie
+;; 接受两个 Atom 参数，返回值类型为 Atom
+;; 声明类型和函数定义的形式一致
 (claim currying-test1
   (-> Atom Atom
     Atom))
@@ -283,6 +280,8 @@ plus (S k) m = S (plus k m)
   (λ (a b)
     b))
 
+;; 声明类型同上
+;; 声明类型和函数定义的形式不一致
 (claim currying-test2
   (-> Atom Atom
     Atom))
@@ -291,6 +290,8 @@ plus (S k) m = S (plus k m)
     (λ (b)
       b)))
 
+;; 接受一个 Atom 参数，返回一个类型为 (-> Atom Atom) 的函数
+;; 声明类型和函数定义的形式不一致
 (claim currying-test3
   (-> Atom
     (-> Atom
@@ -299,6 +300,8 @@ plus (S k) m = S (plus k m)
   (λ (a b)
     b))
 
+;; 声明类型同上
+;; 声明类型和函数定义的形式一致
 (claim currying-test4
   (-> Atom
     (-> Atom
@@ -309,7 +312,7 @@ plus (S k) m = S (plus k m)
       b)))
 ```
 
-这几个函数无论是被声明成“接受两个`Atom`参数，返回值类型为`Atom`”（currying-test1、currying-test2 的情况），还是“接受一个`Atom`参数，返回一个类型为`(-> Atom Atom)`的函数”（currying-test3、currying-test4 的情况），也无论声明类型的形式和函数定义的形式是否一致（1、4 一致，2、3 不一致），在 Pie 的解释器看来都是完全相同的：
+这几个函数无论是有声明类型上的差异，还是声明类型的形式和函数定义的形式是否一致，在 Pie 的解释器看来都是完全相同的：
 
 ```pie
 > currying-test1
@@ -375,9 +378,7 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
 ```
 
 要使用或者处理 List 类型的值，同样也需要对应的 eliminator。List 版的“内置”了递归的 eliminator 叫 [rec-List](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._rec-.List%29%29)，它也遵循相同的使用模式，即`(rec-List target base step)`：
-
-![rec-Nat](/dt/rec-List.png)
-
+![rec-List](/dt/rec-List.png)
 类似地，当`target`为`nil`时，`base`的值就作为整个表达式的值；当`target`不为`nil`而可以写作`(:: e es)`时，`step`的返回值则作为整个表达式的最终结果，此时`step`的三个参数分别是`e`、`es`和`(rec-List es base step)`。继续通过一个例子来详细说明`rec-List`的用法，写一个返回 List 长度的函数`length`。如果想把`length`定义成可以作用于元素类型任意的 List（`(List Nat)`、`(List Atom)`等），进而将其声明如下的话，
 
 ```pie
@@ -517,7 +518,6 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
 ```
 
 这里我们通过`append`函数应有的一个属性—— append 后得到的 List 的长度等于两个参数 List 长度的和——来检验函数的正确性。`check-same`表达式的使用方式是`(check-same type expr1 expr2)`，如果`expr1`和`expr2`不是`type`类型的相等的两个值，解释器会“静态”地指出这个错误：
-
 ![check-same](/dt/check-same.png)
 
 下面要介绍的这个新类型可以说是有长度属性的 List，和这个新类型相关的函数都可以借助参数和返回值的类型来自动实现类似于上面程序片段中的对于长度属性的检查。
@@ -541,10 +541,9 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
 ```
 
 如果不小心多写了一个`vec::`，则声明的类型和实际定义的不一样，解释器就会指出这个错误，虽然错误描述不是很明确：
-
 ![err2](/dt/err2.png)
 
-在深入讨论 Vec 类型前先介绍另一个`Nat`类型的 eliminator，因为它与 Vec 类型有着密切的关系。仍然是通过一个例子来说明，假设定义一个函数`repeat`，它可以重复`n`次某个任意类型`E`的值`e`，返回的结果是一个长度`n`、元素类型`E`且所有元素都是`e`的 Vec。这个函数声明如下：
+在深入讨论 Vec 类型前需要再介绍另一个`Nat`类型的 eliminator，因为它与 Vec 类型有着非常密切的关系。仍然是通过一个例子来说明，假设定义一个函数`repeat`，它可以重复`n`次某个任意类型`E`的值`e`，返回的结果是一个长度`n`、元素类型`E`且所有元素都是`e`的 Vec。这个函数声明如下：
 
 ```pie
 (claim repeat
@@ -567,7 +566,19 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
           (vec:: e repeat-n-1))))))
 ```
 
-但是问题出在`rec-Nat`要求`base`、`step`以及整个`rec-Nat`表达式的值的类型必须一致。但是在上述定义中，`repeat`的声明类型即整个`rec-Nat`表达式的类型是`(Vec E n)`；`base`是`vecnil`，类型为`(Vec E 0)`；而`step`每次递归调用所返回的类型都不一样，从`(Vec E 1)`到`(Vec E n)`。
+但是问题出在`rec-Nat`要求`base`、`step`以及整个`rec-Nat`表达式的值的类型必须一致，在上述定义中，`repeat`的声明类型即整个`rec-Nat`表达式的类型是`(Vec E n)`；`base`是类型为`(Vec E 0)`的`vecnil`；而`step`每次递归调用所返回的类型都不一样，在`target`从`1`到`n`变化的过程中，返回值也从`(Vec E 1)`变到`(Vec E n)`。所以解释器不会接受这个函数定义。
+
+像 Vec 这样接受参数的类型在类型理论里被叫做 type family，根据传入的参数的不同，得到的类型也随着变化。所以上例中的`(Vec E 0)`、`(Vec E 1)`…… 在类型系统看来都是不同的类型。而类似于`E`这样不变的参数被称作 **parameter**，像`0`、`1`…… 这样变化着的参数被叫做 **index** [^6]。在 Pie 语言里处理包含不同 index 的一类类型时，需要用到的一类 eliminator 都以 ind- 开头（ind 是 inductive 的缩写）。在`repeat`函数中，因为 target 是`Nat`类型的，所以用到的 eliminator 是 [ind-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Nat%29%29)。`ind-Nat`除了接受和`rec-Nat`类似的`target`、`base`和`step`三个参数外，还需要一个额外的参数`motive`。
+![ind-Nat](/dt/ind-Nat.png)
+`motive`的类型是`(-> Nat U)`，它根据传入的自然数参数返回一个对应的类型。在`ind-Nat`中，`target`的类型仍然为`Nat`；`base`的类型变成了`(motive zero)`，也就是调用时传入的函数`motive`作用于自然数`zero`时返回的类型；而`step`的类型要更复杂一些：
+
+```pie
+(Π ((n Nat))
+  (-> (motive n)
+    (motive (add1 n))))
+```
+
+它接受两个类型分别为`Nat`和`(motive n)`的参数，返回一个类型为`(motive (add1 n))`的值。`step`的第一个参数是比当前`target`小一的自然数`n`，第二个是把`n`作为新的`target`递归调用`ind-Nat`——`(ind-Nat n motive base step)`——后得到的值。因为`(add1 n)`等于当前的`target`，所以`step`的返回值类型`(motive (add1 n))`和整个`ind-Nat`表达式的类型`(motive target)`也是相同的。
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
@@ -575,3 +586,4 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
 [^4]: `::` 读作 cons（/ˈkɑnz/），继承自 Lisp 语言。
 [^5]: 可以通过下图的菜单导入[这个文件](/dt/keybindings.rkt)，之后就可以直接在 DrRacket 里按 Ctrl-[ 输入字母 Π。
       ![keybind](/dt/keybind.png)
+[^6]: 关于 parameter 和 index 的更详细准确的区别可以参考 [stackoverflow 上的这个问题](https://stackoverflow.com/questions/24600256/difference-between-type-parameters-and-indices)。

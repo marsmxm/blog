@@ -2,6 +2,7 @@
 title: "Y Combinator in Scheme"
 date: 2016-04-30
 draft: false
+reward: false
 author: "Mu Xian Ming"
 
 categories: [P]

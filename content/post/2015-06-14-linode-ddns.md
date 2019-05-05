@@ -2,6 +2,7 @@
 title: "通过 Linode API 实现动态 DNS"
 date: 2015-06-14
 draft: false
+reward: false
 author: "Mu Xian Ming"
 
 categories: [I]

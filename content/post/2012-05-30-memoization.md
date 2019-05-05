@@ -2,6 +2,7 @@
 title: "Memoization"
 date: 2012-05-30
 draft: false
+reward: false
 author: "Mu Xian Ming"
 
 categories: [P]
