@@ -620,7 +620,7 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
         TODO))))
 ```
 
-有了`motive`之后，可以得到`step`的类型：
+有了`motive`之后，就可以知道`step`的类型了：
 
 ```pie
 (Π ((c-1 Nat))            ; c-1 代表比 count 小一的自然数
@@ -628,21 +628,35 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
     (Vec E (add1 c-1))))  ; 即 (motive (add1 c-1))
 ```
 
-为了让程序便于理解，可以把`step`作为一个独立的函数提到外面：
+根据类型就可以确定`step`的函数定义中需要接受两个参数：
 
 ```pie
-(claim step-repeat
-  (Π ((E U)
-      (c-1 Nat))
-  (-> (Vec E c-1)
-    (Vec E (add1 c-1)))))
-(define step-repeat
-  (λ (E c-1)
-    (λ (repeat-c-1)
-      TODO)))
+(define repeat
+  (λ (E count)
+    (λ (e)
+      (ind-Nat count
+        (λ (k)
+          (Vec E k))
+        vecnil
+        (λ (c-1 repeat-c-1)
+          TODO)))))
 ```
 
-提到外面之后`step-repeat`多了一个参数`E`，是因为到时候需要把类型参数`E`从`repeat`传递到`step-repeat`中。`repeat-c-1`参数代表的是把`count`减一后得到的自然数`c-1`作为新的`target`去递归调用`ind-Nat`所得到的类型为`(Vec E c-1)`的值。这个值比最后要返回的 Vec 长度少一
+`repeat-c-1`参数代表的是把`count`减一后得到的自然数`c-1`作为新的`target`去递归调用`ind-Nat`所得到的类型为`(Vec E c-1)`的值。这个值比`repeat`要返回的`(Vec E (add1 c-1))`长度少一，又因为返回的 Vec 的所有元素都是`e`（`repeat`的参数之一），所以只要把`e`放到`repeat-c-1`里就得到了最终的结果：
+
+```pie
+(define repeat
+  (λ (E count)
+    (λ (e)
+      (ind-Nat count
+        (λ (k)
+          (Vec E k))
+        vecnil
+        (λ (c-1 repeat-c-1)
+          (vec:: e repeat-c-1))))))
+```
+
+可以看出来`ind-Nat`的用法和思路与`rec-Nat`非常接近，区别只在于`rec-Nat`中的`base`、`step`的第二个参数以及`step`的返回值的类型都是一样的，这个类型也是整个`rec-Nat`表达式值的类型；而对于`ind-Nat`，
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
