@@ -197,9 +197,13 @@ plus (S k) m = S (plus k m)
         (add1 (+ n-1 m)))))) ; 错误: Unknown variable +
 ```
 
-不幸的是如果把上面这段程序输入到定义区域，DrRacket 会在最后一行提示 “Unknown variable +”。所以我们只能改成使用“内置”了递归的 eliminator，`rec-Nat`：
+不幸的是如果把上面这段程序输入到定义区域，DrRacket 会在最后一行提示 “Unknown variable +”。所以我们只能改成使用“内置了递归”的 eliminator，[rec-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._rec-.Nat%29%29)。`rec-Nat`和`which-Nat`类似，接受的三个参数也是`target`、`base`和`step`，而且当`target`等于`0`时同样把`base`作为自身的值返回。
+![rec-Nat](/dt/rec-Nat.png)
+不同的是`rec-Nat`的`step`参数类型是`(-> Nat X X)`。当`target`可以表示成`(add1 n-1)`的非零自然数时，`step`的两个参数分别是`n-1`和`(rec-Nat n-1 base step)`。也就是说`rec-Nat`内置了对自身的递归调用，作为`rec-Nat`的使用者只需要知道`step`的**第一个参数是比当前的非零`target`小一的自然数，第二个参数等于把第一个参数作为新的`target`传递给递归的`rec-Nat`所得到的值**。在上面的加法例子中，`step`函数体里只用到了第二个参数，即比`n`小一的自然数与`m`的和。
 
-```Pie
+用`rec-Nat`来实现`+`函数同样可以把`n`作为`target`，`n`等于`0`时`base`的值应该为`m`，因为`(+ 0 m)`等于`m`：
+
+```pie
 (claim +
   (-> Nat Nat
     Nat))
@@ -207,13 +211,21 @@ plus (S k) m = S (plus k m)
   (λ (n m)
     (rec-Nat n
       m
-      (λ (n-1 n-1+m)
-        (add1 n-1+m)))))
+      TODO)))
 ```
 
-[rec-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._rec-.Nat%29%29) 和`which-Nat`类似，接受的三个参数也是`target`、`base`和`step`，而且当`target`等于`0`时同样把`base`作为自身的值返回。
-![rec-Nat](/dt/rec-Nat.png)
-不同的是`rec-Nat`的`step`参数类型是`(-> Nat X X)`。当`target`可以表示成`(add1 n-1)`的非零自然数时，`step`的两个参数分别是`n-1`和`(rec-Nat n-1 base step)`。也就是说`rec-Nat`内置了对自身的递归调用，作为`rec-Nat`的使用者只需要知道`step`的**第一个参数是比当前的非零`target`小一的自然数，第二个参数等于把第一个参数作为新的`target`传递给递归的`rec-Nat`所得到的值**。在上面的加法例子中，`step`函数体里只用到了第二个参数，即比`n`小一的自然数与`m`的和。
+因为还没有决定`step`如何实现，可以在它的位置上暂时写上`TODO`。在 Pie 里可以用`TODO`替代程序中尚未实现的部分，Pie 还可以提示每个`TODO`应该是什么类型的。如果运行上面的程序片段，会得到当前程序中所有的`TODO`的信息：
+
+```
+unsaved-editor:22.6: TODO:
+ n : Nat
+ m : Nat
+------------
+ (→ Nat Nat
+   Nat)
+```
+
+横线上面的`n`和`m`是当前`TODO`所在的 scope 里所有的变量类型，下面是它本身的类型。
 
 为了加深对`rec-Nat`的理解，我们可以模拟一下解释器对`(+ 2 1)`的求值过程。当解释器遇到表达式`(+ 2 1)`时，首先会判断这是一个函数调用，所以第一步把函数名替换成实际的函数定义：
 
@@ -656,7 +668,25 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
           (vec:: e repeat-c-1))))))
 ```
 
-可以看出来`ind-Nat`的用法和思路与`rec-Nat`非常接近，区别只在于`rec-Nat`中的`base`、`step`的第二个参数以及`step`的返回值的类型都是一样的，这个类型也是整个`rec-Nat`表达式值的类型；而对于`ind-Nat`，
+可以看出来`ind-Nat`的用法和思路与`rec-Nat`非常接近，区别只在于`rec-Nat`中的`base`、`step`的第二个参数以及`step`的返回值的类型都是一样的，这个类型也是整个`rec-Nat`表达式值的类型；而对于`ind-Nat`来说，这三者的类型可能相同也可能不同，具体是什么类型取决于`motive`函数分别作用于`zero`、比`target`小一的自然数以及`target`所得到的类型。从这一点也可以看出`rec-Nat`其实是更通用的`ind-Nat`的一个特例，所以可以用`ind-Nat`来实现`rec-Nat`：
+
+```pie
+(claim my-rec-Nat
+  (Π ((E U))
+    (-> Nat         ; target 的类型
+        E           ; base 的类型
+        (-> Nat     ; step 的第一个参数的类型
+            E       ; step 的第二个参数的类型
+          E)        ; step 的返回值类型
+      E)))          ; my-rec-Nat 的返回值类型
+(define my-rec-Nat
+  (λ (E)
+    (λ (target base step)
+      (ind-Nat target
+        (λ (k) E)   ; 这里的 motive 决定了 base、step 的参数
+        base        ; 和返回值类型都是 E
+        step))))
+```
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
