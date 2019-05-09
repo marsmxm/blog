@@ -214,10 +214,9 @@ plus (S k) m = S (plus k m)
       TODO)))
 ```
 
-因为还没有决定`step`如何实现，可以在它的位置上暂时写上`TODO`。在 Pie 里可以用`TODO`替代程序中尚未实现的部分，Pie 还可以提示每个`TODO`应该是什么类型的。如果运行上面的程序片段，会得到当前程序中所有的`TODO`的信息：
+因为还没有决定`step`如何实现，可以在它的位置上暂时写上`TODO`。在 Pie 里可以用`TODO`替代程序中尚未实现的部分，Pie 还可以提示每个`TODO`应该是什么类型。如果运行上面的程序片段，会得到和`TODO`相关的信息：
 
-```
-unsaved-editor:22.6: TODO:
+```code
  n : Nat
  m : Nat
 ------------
@@ -225,9 +224,40 @@ unsaved-editor:22.6: TODO:
    Nat)
 ```
 
-横线上面的`n`和`m`是当前`TODO`所在的 scope 里所有的变量类型，下面是它本身的类型。 
+横线上面的`n`和`m`是当前`TODO`所在的 scope 里所有的变量类型，下面是它本身的类型。从`rec-Nat`的定义可以知道`TODO`代表的`step`函数接受的第一个参数是比`n`小一的自然数（因为`n`是`target`），可以取名为`n-1`；另一个参数是把`n-1`作为新的`target`时递归调用`rec-Nat`的结果，其实也就是`n-1`与`m`的和，所以可以取名`n-1+m`：
 
-为了加深对`rec-Nat`的理解，我们可以模拟一下解释器对`(+ 2 1)`的求值过程。当解释器遇到表达式`(+ 2 1)`时，首先会判断这是一个函数调用，所以第一步把函数名替换成实际的函数定义：
+```pie
+(define +
+  (λ (n m)
+    (rec-Nat n
+      m
+      (λ (n-1 n-1+m)
+        TODO))))
+```
+
+此时`TODO`的类型变为了：
+
+```code
+     n : Nat
+     m : Nat
+   n-1 : Nat
+ n-1+m : Nat
+-------------
+ Nat
+ ```
+
+从这个类型描述可以知道`step`函数体必须是一个值类型为`Nat`的表达式，这个表达式的值也是最终的结果，`n`与`m`的和。现在我们已经有了`n-1`与`m`的和，想得到`n`加`m`的话当然就是把`n-1+m`参数加一：
+
+```pie
+(define +
+  (λ (n m)
+    (rec-Nat n
+      m
+      (λ (n-1 n-1+m)
+        (add1 n-1+m)))))
+```
+
+这样就得到了完整的`+`函数的定义。为了加深对`rec-Nat`的理解，我们可以模拟一下解释器对`(+ 2 1)`的求值过程。当解释器遇到表达式`(+ 2 1)`时，首先会判断这是一个函数调用，所以第一步把函数名替换成实际的函数定义：
 
 ```pie
 ((λ (n m)
@@ -365,7 +395,7 @@ unsaved-editor:22.6: TODO:
 (the Nat 3)
 ```
 
-用了比较长的篇幅来介绍 Pie 的几个基础类型，接下来要说的就是 Pie 语言里的几种依赖类型。
+用了比较长的篇幅来介绍 Pie 的几个基础类型，接下来可以说一说 Pie 语言里的几种依赖类型了。
 
 ### 依赖于类型的类型：List
 
@@ -543,7 +573,7 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
   (Vec Atom 3))
 ```
 
-Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对应于 List 的`nil`和`::`。所以`three-names`可以定义为：
+Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对应于 List 的`nil`和`::`。这样`three-names`可以定义为：
 
 ```pie
 (define three-names
@@ -582,7 +612,7 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
 
 像 Vec 这样接受参数的类型在类型理论里被叫做 type family，随着传入的参数的不同，得到的类型也在变化。所以上例中的`(Vec E 0)`、`(Vec E 1)`…… 在类型系统看来都是不同的类型。而类似于`E`这样不变的参数被称作 **parameter**，像`0`、`1`…… 这样变化着的参数被叫做 **index** [^6]。在 Pie 语言里处理包含不同 index 的一类类型时，需要用到的一类 eliminator 都以 ind- 开头（ind 是 inductive 的缩写）。在`repeat`函数中，因为 target 是`Nat`类型的，所以用到的 eliminator 是 [ind-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Nat%29%29)。`ind-Nat`除了接受和`rec-Nat`类似的`target`、`base`和`step`三个参数外，还需要一个额外的参数`motive`[^7]。
 ![ind-Nat](/dt/ind-Nat.png)
-`motive`的类型是`(-> Nat U)`，它根据传入的自然数参数返回一个对应的类型。在`ind-Nat`中，`target`的类型仍然为`Nat`；`base`的类型变成了`(motive zero)`，也就是调用时传入的函数`motive`作用于自然数`zero`时返回的类型；而`step`的类型要更复杂一些：
+`motive`的类型是`(-> Nat U)`，它根据传入的自然数参数返回一个对应的**类型**。在`ind-Nat`中，`target`的类型仍然为`Nat`；`base`的类型变成了`(motive zero)`，也就是传入的函数`motive`作用于自然数`zero`时返回的类型；整个`ind-Nat`表达式的值的类型是`(motive target)`；而`step`的类型要更复杂一些：
 
 ```pie
 (Π ((n Nat))
@@ -627,7 +657,7 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
     (λ (e)
       (ind-Nat count
         (λ (k)          ; motive 函数
-          (Vec E k))
+          (Vec E k))    ; 返回的是类型
         vecnil
         TODO))))
 ```
@@ -668,7 +698,7 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
           (vec:: e repeat-c-1))))))
 ```
 
-可以看出来`ind-Nat`的用法和思路与`rec-Nat`非常接近，区别只在于`rec-Nat`中的`base`、`step`的第二个参数以及`step`的返回值的类型都是一样的，这个类型也是整个`rec-Nat`表达式值的类型；而对于`ind-Nat`来说，这三者的类型可能相同也可能不同，具体是什么类型取决于`motive`函数分别作用于`zero`、比`target`小一的自然数以及`target`所得到的类型。从这一点也可以看出`rec-Nat`其实是更通用的`ind-Nat`的一个特例，所以可以用`ind-Nat`来实现`rec-Nat`：
+可以看出来`ind-Nat`的用法和思路与`rec-Nat`非常接近，区别只在于`rec-Nat`中的`base`、`step`的第二个参数以及`step`的返回值的类型都是一样的，这个类型也是整个`rec-Nat`表达式值的类型；而对于`ind-Nat`来说，这三者的类型可能相同也可能不同，具体是什么类型取决于`motive`函数分别作用于`zero`、比`target`小一的自然数以及`target`本身时所得到的类型。从这一点也可以看出`rec-Nat`其实是更通用的`ind-Nat`的一个特例，所以可以用`ind-Nat`来实现`rec-Nat`：
 
 ```pie
 (claim my-rec-Nat
