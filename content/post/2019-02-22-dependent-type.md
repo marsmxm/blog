@@ -433,12 +433,12 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
 
 ```pie
 (claim length
-  (Pi ((E U))
+  (Π ((E U))
     (-> (List E)
       Nat)))
 ```
 
-`Pi`表达式的第一个列表里可以写多个类型变量`(Pi ((x X) (y Y) ...) ...)`，其中`x`、`y`是变量名，`X`和`Y`是变量的类型。`length`的类型声明里只需要一个变量`E`，它的类型`U`代表的是**类型的类型**（相当于前面 Idris 程序片段里的`Type`）。因为 List 类型必须是以 (List 类型) 的形式存在，所以这里`E`的取值范围必须是类型，即`U`。如果类比 Java 的泛型，
+`Pi`表达式的第一个列表里可以写多个类型变量`(Π ((x X) (y Y) ...) ...)`，其中`x`、`y`是变量名，`X`和`Y`是变量的类型。`length`的类型声明里只需要一个变量`E`，它的类型`U`代表的是**类型的类型**（相当于前面 Idris 程序片段里的`Type`）。因为 List 类型必须是以 (List 类型) 的形式存在，所以这里`E`的取值范围必须是类型，即`U`。如果类比 Java 的泛型，
 
 ```java
 <E> int length(List<E> lst) {...}
@@ -610,6 +610,8 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
 
 但是问题出在`rec-Nat`要求`base`、`step`以及整个`rec-Nat`表达式的值的类型必须一致，在上述定义中，`repeat`的声明类型即整个`rec-Nat`表达式的类型是`(Vec E count)`；`base`是类型为`(Vec E 0)`的`vecnil`；而`step`每次递归调用所返回的类型都不一样，在`target`从`1`到`count`变化的过程中，返回值也从`(Vec E 1)`变到`(Vec E count)`。所以解释器不会接受这个函数定义。
 
+#### 更强大的归纳式 eliminator
+
 像 Vec 这样接受参数的类型在类型理论里被叫做 type family，随着传入的参数的不同，得到的类型也在变化。所以上例中的`(Vec E 0)`、`(Vec E 1)`…… 在类型系统看来都是不同的类型。而类似于`E`这样不变的参数被称作 **parameter**，像`0`、`1`…… 这样变化着的参数被叫做 **index** [^6]。在 Pie 语言里处理包含不同 index 的一类类型时，需要用到的一类 eliminator 都以 ind- 开头（ind 是 inductive 的缩写）。在`repeat`函数中，因为 target 是`Nat`类型的，所以用到的 eliminator 是 [ind-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Nat%29%29)。`ind-Nat`除了接受和`rec-Nat`类似的`target`、`base`和`step`三个参数外，还需要一个额外的参数`motive`[^7]。
 ![ind-Nat](/dt/ind-Nat.png)
 `motive`的类型是`(-> Nat U)`，它根据传入的自然数参数返回一个对应的**类型**。在`ind-Nat`中，`target`的类型仍然为`Nat`；`base`的类型变成了`(motive zero)`，也就是传入的函数`motive`作用于自然数`zero`时返回的类型；整个`ind-Nat`表达式的值的类型是`(motive target)`；而`step`的类型要更复杂一些：
@@ -698,7 +700,12 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
           (vec:: e repeat-c-1))))))
 ```
 
-可以看出来`ind-Nat`的用法和思路与`rec-Nat`非常接近，区别只在于`rec-Nat`中的`base`、`step`的第二个参数以及`step`的返回值的类型都是一样的，这个类型也是整个`rec-Nat`表达式值的类型；而对于`ind-Nat`来说，这三者的类型可能相同也可能不同，具体是什么类型取决于`motive`函数分别作用于`zero`、比`target`小一的自然数以及`target`本身时所得到的类型。从这一点也可以看出`rec-Nat`其实是更通用的`ind-Nat`的一个特例，所以可以用`ind-Nat`来实现`rec-Nat`：
+Vec 类型中既有元素的类型信息，也包含了长度信息，相比于 List 来说，Vec 使得类型系统能发现更多的程序错误。如果在上面`repeat`函数定义的第 9 行犯了类似前面`append-wrong`的错误，忘记了插入`e`的话，类型系统会有一个错误提示：
+![repeat-wrong](/dt/repeat-wrong.png)
+
+所以当一个处理 Vec 类型的函数通过了类型系统检查的时候，我们就会对它的正确性有更多的信心。
+
+通过`repeat`这个例子也可以看出来`ind-Nat`的用法和思路与`rec-Nat`非常接近，区别只在于`rec-Nat`中的`base`、`step`的第二个参数以及`step`的返回值的类型都是一样的，这个类型也是整个`rec-Nat`表达式值的类型；而对于`ind-Nat`来说，这三者的类型可能相同也可能不同，具体是什么类型取决于`motive`函数分别作用于`zero`、比`target`小一的自然数以及`target`本身时所得到的类型。从这一点也可以看出`rec-Nat`其实是更通用的`ind-Nat`的一个特例，所以可以用`ind-Nat`来实现`rec-Nat`：
 
 ```pie
 (claim my-rec-Nat
@@ -716,6 +723,34 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
         (λ (k) E)   ; 这里的 motive 决定了 base、step 的参数
         base        ; 和返回值类型都是 E
         step))))
+```
+
+归纳式 eliminator 之所以被这样称呼是因为它们包含了和数学中归纳式证明相类似的想法。如果要证明一个关于自然数的定理，首先证明 x = 0 的情况成立，然后假设 x = n - 1 时定理成立，如果可以从这个假设推出 x = n 时定理也成立，那么就可以肯定这个定理在自然数范围内都成立。同样的，如果我们告诉`ind-Nat`当`target`等于`zero`时表达式的值，以及当`target`等于`(add1 n)`时，如何从`n`所对应的结果得到`(add1 n)`所对应的结果，那么`ind-Nat`就可以得到所有自然数范围内的参数所对应的表达式的值。Pie 语言中所有以 ind- 开头的 eliminator 都包含同样的思想，区别只在于`target`和`step`参数的类型。接下来再看一下 List 和 Vec 的归纳式 eliminator。
+
+#### ind-List
+
+List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.List%29%29)。
+![ind-List](/dt/ind-List.png)
+它的用法和`ind-Nat`非常接近，只是`motive`的参数类型从`Nat`换成了`(List E)`，`step`的三个参数的语义和`rec-List`的也是相同的（除了第三个参数的类型变为由`motive`决定这一点）。有了`ind-List`就可以实现一些接受 List 类型参数，返回 Vec 类型值的函数，例如把 List 转换成等同的 Vec 的函数`list->vec`。这里“等同”指的是转换前后的长度相等，而且所有元素相同、顺序不变。先来写出函数的声明：
+
+```pie
+(claim list->vec
+  (Π ((E U)
+      (lst (List E)))
+    (Vec E (length E lst))))
+```
+
+首先`list->vec`需要一个`(List E)`类型的参数，所以在这个参数之前要有一个类型为`U`的类型变量`E`，另外返回值类型中也会用到 List 类型的参数，这样就把`lst`参数也作为类型变量放到`Π`表达式的括号内。返回值类型中包含的表达式`(length E lst)`是用来表达转换前后长度相同的语义，这里的`length`是上文中实现的返回 List 长度的函数。下面是函数`list->vec`的实现：
+
+```pie
+(define list->vec
+  (λ (E lst)
+    (ind-List lst
+      (λ (xs)                   ; motive 返回与 List 类型的参数 xs
+        (Vec E (length E xs)))  ; 长度相同的 Vec 类型
+      vecnil                    ; base 的类型为 (motive nil)，即 (Vec E 0)，只能是 vecnil
+      (λ (e es list->vec-es)    ; list->vec-es 是参数 es 被转换后的结果
+        (vec:: e list->vec-es)))))
 ```
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
