@@ -1,7 +1,7 @@
 ---
 title: "依赖类型与定理证明"
 date: 2019-04-14T00:56:13+08:00
-draft: true
+draft: false
 author: "Mu Xian Ming"
 
 categories: [P]
@@ -582,7 +582,7 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
       (vec:: '成吉思汗 vecnill))))
 ```
 
-如果不小心多写了一个`vec::`，则声明的类型和实际定义的不一样，解释器就会指出这个错误，虽然错误描述不是很明确：
+如果不小心多写了一个`vec::`，则声明的类型和实际定义的不一致，解释器就会指出这个错误，虽然错误描述不是很明确：
 ![err2](/dt/err2.png)
 
 在深入讨论 Vec 类型前需要再介绍另一个`Nat`类型的 eliminator，因为它与 Vec 类型有着非常密切的关系。仍然是通过一个例子来说明，假设定义一个函数`repeat`，它可以重复`count`次某个任意类型`E`的值`e`，返回的结果是一个长度为`count`、元素类型`E`且所有元素都是`e`的 Vec。这个函数声明如下：
@@ -725,9 +725,9 @@ Vec 类型中既有元素的类型信息，也包含了长度信息，相比于 
         step))))
 ```
 
-归纳式 eliminator 之所以被这样称呼是因为它们包含了和数学中归纳式证明相类似的想法。如果要证明一个关于自然数的定理，首先证明 x = 0 的情况成立，然后假设 x = n - 1 时定理成立，如果可以从这个假设推出 x = n 时定理也成立，那么就可以肯定这个定理在自然数范围内都成立。同样的，如果我们告诉`ind-Nat`当`target`等于`zero`时表达式的值，以及当`target`等于`(add1 n)`时，如何从`n`所对应的结果得到`(add1 n)`所对应的结果，那么`ind-Nat`就可以得到所有自然数范围内的参数所对应的表达式的值。Pie 语言中所有以 ind- 开头的 eliminator 都包含同样的思想，区别只在于`target`和`step`参数的类型。接下来再看一下 List 和 Vec 的归纳式 eliminator。
+归纳式 eliminator 之所以被这样称呼是因为它们包含了和数学中归纳式证明相类似的想法。如果要证明一个关于自然数的定理，首先证明 x = 0 的情况成立，然后假设 x = n - 1 时定理成立，如果可以从这个假设推出 x = n 时定理也成立，那么就可以肯定这个定理在自然数范围内都成立。同样的，如果我们告诉`ind-Nat`当`target`等于`zero`时表达式的值，以及当`target`等于`(add1 n)`时，如何从`n`所对应的结果得到`(add1 n)`所对应的结果，那么`ind-Nat`就可以得到所有自然数范围内的参数所对应的表达式的值，只不过首先需要通过`motive`参数指出任意一个`Nat`所对应的类型。Pie 语言中所有以 ind- 开头的 eliminator 都包含同样的思想，区别只在于`target`和`step`参数的类型。接下来再分别看一下 List 和 Vec 的归纳式 eliminator。
 
-#### ind-List
+#### List 和 Vec 的归纳式 eliminator
 
 List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.List%29%29)。
 ![ind-List](/dt/ind-List.png)
@@ -752,6 +752,24 @@ List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.or
       (λ (e es list->vec-es)    ; list->vec-es 是参数 es 被转换后的结果
         (vec:: e list->vec-es)))))
 ```
+
+和使用`ind-Nat`时运用的归纳式思想一样，在使用`ind-List`的时候需要，
+
+1. 通过`motive`告诉解释器任意一个 List 对应的表达式值的类型，这里任意 List 类型的值`xs`都对应一个元素类型相同，长度也相等的 Vec；
+2. 通过`base`参数指出当`target`等于`nil`时表达式的值，`nil`的长度为`0`，所以对应的 Vec 就是`vecnil`；
+3. 通过`step`函数告诉解释器，当`target`等于`(:: e es)`时如何从`es`对应的结果，也就是`es`所转换成为的`list->vec-es`，来得到`(:: e es)`所要转换成为的那个 Vec，可以很容易的知道那就是`(vec:: e list->vec-es)`。
+
+这样最终得到的就是一个可以把任意 List 转换成等价的 Vec 的函数。
+
+```pie
+> (list->vec Atom philosophers)
+(the (Vec Atom 3)
+  (vec:: 'Descartes
+    (vec:: 'Hume
+      (vec:: 'Kant vecnil))))
+```
+
+
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
