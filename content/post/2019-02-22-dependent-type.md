@@ -769,6 +769,83 @@ List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.or
       (vec:: 'Kant vecnil))))
 ```
 
+类似的也可以反过来写一个把 Vec 转换成 List 的函数`vec->list`。首先是声明部分：
+
+```pie
+(claim vec->list
+  (Π ((E U)
+      (l Nat))
+    (-> (Vec E l)
+      (List E))))
+```
+
+可以看到，因为返回值类型变成了不含长度信息的`(List E)`，所以类型声明中不再包含转换前的 Vec 的长度与转换后的 List 的相等的这个限制，这也使得类型系统无法阻止`vec->list`中出现类似上文`append-wrong`那样可以由长度反映出来的错误。由于参数类型从 List 变成了 Vec，所以这个函数使用的是以 Vec 作为`target`的 eliminator，[ind-Vec](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Vec%29%29)。
+![ind-Vec](/dt/ind-Vec.png)
+因为 Vec 类型多了一个长度属性，所以相应的，`ind-Vec`增加了一个`Nat`类型的 target-1 对应于 target-2 的长度，motive 函数也多了一个`Nat`类型的参数代表另一个参数的长度，最后 step 的`Nat`类型参数`k`也对应于`es`参数的长度。除了参数个数及类型的区别，`ind-Vec`的用法和`ind-List`基本一致。所以参照`list->vec`应该可以很容易地得到`vec->list`的定义：
+
+```pie
+(claim vec->list
+  (Π ((E U)
+      (l Nat))
+    (-> (Vec E l)
+      (List E))))
+(define vec->list
+  (λ (E l)
+    (λ (vec)
+      (ind-Vec l vec
+        (λ (k xs)
+          (List E))
+        nil
+        (λ (l-1 e es vec->list-es)
+          (:: e vec->list-es))))))
+```
+
+因为`list->vec`和`vec-list`互为逆运算，所以这两个函数可以互相检验对方的正确性。比如下面检查的是对`(List Atom)`类型的`philosophers`，接连应用`list->vec`和`vec-list`之后，得到的仍然是原先的 List：
+
+```pie
+(check-same (List Atom)
+  philosophers
+  (vec->list Atom 3
+    (list->vec Atom  philosophers)))
+```
+
+不过这也只能验证对于`philosophers`来说，`list->vec`和`vec-list`两个函数是正确的。我们并不能从此得到足够的信心认为这两个函数对于任何 List 或 Vec 都是正确的。这其实也是大多数语言中的单元测试所处的窘境，它们只能检验出某些错误的“存在”但是却没办法保证这类错误在任何情况下都“不存在”。有的测试工具也提供了一些方法来应对这个局限性，比如 [ScalaTest](http://www.scalatest.org/) 所提供的[基于属性的测试](http://www.scalatest.org/user_guide/property_based_testing)方法，指的是用一个函数来表达测试对象应该包含的目标属性，然后结合内置的 generator 来模拟对测试对象在整个作用域内的测试。下面就是对一个分数实现类`Fraction`在整个作用域（所有可能的被除数、除数对）内的一个测试：
+
+```scala
+class Fraction(n: Int, d: Int) {
+  require(d != 0)
+  require(d != Integer.MIN_VALUE)
+  require(n != Integer.MIN_VALUE)
+
+  val numer = if (d < 0) -1 * n else n
+  val denom = d.abs
+
+  override def toString = numer + " / " + denom
+}
+
+forAll { (n: Int, d: Int) =>
+  whenever (d != 0 && d != Integer.MIN_VALUE
+      && n != Integer.MIN_VALUE) {
+
+    val f = new Fraction(n, d)
+
+    if (n < 0 && d < 0 || n > 0 && d > 0)
+      f.numer should be > 0
+    else if (n != 0)
+      f.numer should be < 0
+    else
+      f.numer should be === 0
+
+    f.denom should be > 0
+  }
+}
+```
+
+不过这里用到的`forAll`并不是真的对所有可能的`n`、`d`组合来生成测试，只是尽可能生成一些范围内有代表性的实例。虽然这类工具能让测试更可靠，但是它们仍然没有带给开发者对程序正确性的绝对信心。而像 Pie 之类的支持依赖类型的语言提供了一个在逻辑上证明程序的某个属性成立与否的途径，有了它我们对程序的可靠性就有了更多的信心。
+
+## 定理证明
+
+为了说明这个证明的方法，需要从 Pie 语言里表达相等关系的类型说起。
 
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
