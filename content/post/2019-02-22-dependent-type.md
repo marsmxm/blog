@@ -769,7 +769,31 @@ List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.or
       (vec:: 'Kant vecnil))))
 ```
 
-类似的也可以反过来写一个把 Vec 转换成 List 的函数`vec->list`。首先是声明部分：
+在前面`repeat`的例子里展示过，Vec 类型使得类型系统可以在程序运行前就检测出导致长度不一致的一类错误。但是仍然有可能写出长度和类型都正确而实际值却不是所预期的错误程序。比如下面这个只是重复第一个元素的错误版`list->vec`：
+
+```pie
+(claim list->vec-wrong
+  (Π ((E U)
+      (lst (List E)))
+    (Vec E (length E lst))))
+(define list->vec-wrong
+  (λ (E lst)
+    (ind-List lst
+      (λ (xs)
+        (Vec E (length E xs)))
+      vecnil
+      (λ (e es list->vec-es)
+        (repeat E (length E (:: e es)) e)))))
+
+
+> (list->vec-wrong Atom philosophers)
+(the (Vec Atom 3)
+  (vec:: 'Descartes
+    (vec:: 'Descartes
+      (vec:: 'Descartes vecnil))))
+```
+
+那么怎样才能检测出这一类的错误呢？一个可行的办法是，我们可以写出`list->vec`的“逆运算”`vec->list`，这样就可以让这俩个函数互相检验对方的正确性。`vec->list`的声明部分写作：
 
 ```pie
 (claim vec->list
@@ -779,7 +803,7 @@ List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.or
       (List E))))
 ```
 
-可以看到，因为返回值类型变成了不含长度信息的`(List E)`，所以类型声明中不再包含转换前的 Vec 的长度与转换后的 List 的相等的这个限制，这也使得类型系统无法阻止`vec->list`中出现类似上文`append-wrong`那样可以由长度反映出来的错误。由于参数类型从 List 变成了 Vec，所以这个函数使用的是以 Vec 作为`target`的 eliminator，[ind-Vec](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Vec%29%29)。
+由于参数类型从 List 变成了 Vec，所以这个函数使用的是以 Vec 作为`target`的 eliminator，[ind-Vec](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Vec%29%29)。
 ![ind-Vec](/dt/ind-Vec.png)
 因为 Vec 类型多了一个长度属性，所以相应的，`ind-Vec`增加了一个`Nat`类型的 target-1 对应于 target-2 的长度，motive 函数也多了一个`Nat`类型的参数代表另一个参数的长度，最后 step 的`Nat`类型参数`k`也对应于`es`参数的长度。除了参数个数及类型的区别，`ind-Vec`的用法和`ind-List`基本一致。所以参照`list->vec`应该可以很容易地得到`vec->list`的定义：
 
@@ -800,7 +824,7 @@ List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.or
           (:: e vec->list-es))))))
 ```
 
-因为`list->vec`和`vec-list`互为逆运算，所以这两个函数可以互相检验对方的正确性。比如下面检查的是对`(List Atom)`类型的`philosophers`，接连应用`list->vec`和`vec-list`之后，得到的仍然是原先的 List：
+有了`vec->list`之后要解决的问题是，如何用程序表达出“连续两次调用`list->vec`和`vec->list`仍然得到原先的 List”这个意思。我们现在知道的最接近这个需求的工具是`check-same`。比如下面检查的是对`(List Atom)`类型的`philosophers`接连应用`list->vec`和`vec-list`之后，内容不变：
 
 ```pie
 (check-same (List Atom)
@@ -841,7 +865,7 @@ forAll { (n: Int, d: Int) =>
 }
 ```
 
-不过这里用到的`forAll`并不是真的对所有可能的`n`、`d`组合来生成测试，只是尽可能多得生成一些范围内有代表性的实例。虽然这类工具能让测试更可靠，但是它们仍然没有带给开发者对程序正确性的绝对信心。本文开头提到过，像 Pie 之类的支持依赖类型的语言提供了一个在逻辑上证明程序某些属性成立与否的途径，有了它我们可以让程序变得更可靠了。
+不过这里用到的`forAll`并不是真的对所有可能的`n`、`d`组合来生成测试（不然测试程序会无限期的运行下去），只是尽可能多得生成一些范围内有代表性的实例。虽然这类工具能让测试更可靠，但是它们仍然没有带给开发者对程序正确性的绝对信心。本文开头提到过，像 Pie 之类的支持依赖类型的语言提供了一个在逻辑上证明程序某些属性成立与否的途径，有了它我们可以让程序变得更可靠了。
 
 ## 定理证明
 
@@ -985,6 +1009,8 @@ c8.pie:28.4: TODO:
 ```
 
 可以看到，在 Pie 语言里对命题的证明就是一个实现类型定义的过程，只要写出了类型系统可以接受的实现，也就完成了对命题的证明。解释器对证明的解释是一个静态的过程，我们并不需要去“运行”写好的定义（不过后面会看到有的证明被运行时也可以提供附加的功能）。
+
+有了这些了解后，我们可以着手解决上节结尾处，关于`vec->list`和`list->vec`的那个正确性证明了。
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
