@@ -87,6 +87,7 @@ Pie 的语法类似于 Lisp 的各种方言（Scheme，Racket 和 Clojure 等）
 - 自然数`Nat`。表示所有大于等于 0 的整数。
 - 原子`Atom`。相当于 Lisp 中的 symbol 类型，或者也可以粗略的近似于大部分语言里的字符串。`Atom`的值由单撇号和一个或多个字母或连字符组成，例如`'abc`，`'---`和`'Atom`。
 - 函数`(-> Type-1 Type-2 ... Type-n)`。这里最后的`Type-n`是函数的返回值类型，其他的`Type-1 Type-2 ...`是参数类型。
+- 全集`U`。因为在 Pie 里所有的类型可以像值一样被计算和传递，所以它们本身也需要一个类型，就是`U`。`U`是除自身外所有类型的类型。
 
 还有一些复合类型会在后面用到的时候再作详细解释。Pie 的每个类型都有对应的 constructor 和 eliminator。前者用来构造该类型的值；后者的用处是**运用该类型的值所包含的信息来得到所需要的新值**，如果把某种类型的值看作一个罐头的话，那它对应的 eliminator 就像一个起子，而且不同构造的罐头需要用到不一样的起子。
 
@@ -438,7 +439,7 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
       Nat)))
 ```
 
-`Pi`表达式的第一个列表里可以写多个类型变量`(Π ((x X) (y Y) ...) ...)`，其中`x`、`y`是变量名，`X`和`Y`是变量的类型。`length`的类型声明里只需要一个变量`E`，它的类型`U`代表的是**类型的类型**（相当于前面 Idris 程序片段里的`Type`）。因为 List 类型必须是以 (List 类型) 的形式存在，所以这里`E`的取值范围必须是类型，即`U`。如果类比 Java 的泛型，
+`Pi`表达式的第一个列表里可以写多个类型变量`(Π ((x X) (y Y) ...) ...)`，其中`x`、`y`是变量名，`X`和`Y`是变量的类型。`length`的类型声明里只需要一个变量`E`，因为`E`是 List 里元素的类型，所以它的类型是`U`。如果类比 Java 的泛型，
 
 ```java
 <E> int length(List<E> lst) {...}
@@ -833,7 +834,7 @@ List 类型的（毫无悬念地）叫作 [ind-List](https://docs.racket-lang.or
     (list->vec Atom  philosophers)))
 ```
 
-不过这也只能验证对于`philosophers`来说，`list->vec`和`vec-list`两个函数是正确的。我们并不能从此得到足够的信心认为这两个函数对于任何 List 或 Vec 都是正确的。这其实也是大多数语言中的单元测试所处的窘境，它们只能检验出某些错误的“存在”但是却没办法保证这类错误在任何情况下都“不存在”。有的测试工具也提供了一些方法来应对这个局限性，比如 [ScalaTest](http://www.scalatest.org/) 所提供的[基于属性的测试](http://www.scalatest.org/user_guide/property_based_testing)方法，指的是用一个函数来表达测试对象应该包含的目标属性，然后结合内置的 generator 来模拟对测试对象在整个作用域内的测试。下面就是对一个分数实现类`Fraction`在整个作用域（所有可能的被除数、除数对）内的一个测试：
+不过这也只能验证对于`philosophers`来说，`list->vec`和`vec-list`两个函数是正确的。这个测试并不能保证这两个函数对于任何 List 或 Vec 都是正确的。这其实也是大多数语言中的单元测试所处的窘境，它们只能检验出某些错误的“存在”但是却没办法保证这类错误在任何情况下都“不存在”。有的测试工具也提供了一些方法来应对这个局限性，比如 [ScalaTest](http://www.scalatest.org/) 所提供的[基于属性的测试](http://www.scalatest.org/user_guide/property_based_testing)方法，指的是用一个函数来表达测试对象应该包含的目标属性，然后结合内置的 generator 来模拟对测试对象在整个作用域内的测试。下面就是对一个分数实现类`Fraction`在整个作用域（所有可能的被除数、除数对）内的一个测试：
 
 ```scala
 class Fraction(n: Int, d: Int) {
@@ -1010,7 +1011,7 @@ c8.pie:28.4: TODO:
 
 可以看到，在 Pie 语言里对命题的证明就是一个实现类型定义的过程，只要写出了类型系统可以接受的实现，也就完成了对命题的证明。解释器对证明的解释是一个静态的过程，我们并不需要去“运行”写好的定义（不过后面会看到有的证明被运行时也可以提供附加的功能）。
 
-有了这些了解后，我们可以着手解决上节结尾处，关于`vec->list`和`list->vec`的正确性证明了。首先将命题陈述为，“对于任意一个 List，连续作用于函数`list->vec`和`vec->list`后得到的结果和它本身相等”。和这个命题等价的类型声明是：
+有了这些了解后，我们可以着手解决上节结尾处留下来的关于`vec->list`和`list->vec`的正确性证明了。这个命题可以陈述为，“对于任意一个 List，连续应用函数`list->vec`和`vec->list`后得到的结果和它本身相等”。和这个命题等价的类型声明是：
 
 ```pie
 (claim list->vec->list=
@@ -1023,7 +1024,50 @@ c8.pie:28.4: TODO:
          (list->vec E lst)))))
 ```
 
+前面证明`+1=add1`的时候，因为是关于自然数的定理，所以用的是`ind-Nat`。现在要证明的是一个关于 List 的命题，自然会选择`ind-List`作为入手点。因为`lst`参数应该作为 target，这样只需要把返回值类型中的`lst`都替换成 motive 函数的参数`xs`就可以得到 motive 的定义：
 
+```pie
+(λ (xs)
+  (= (List E)
+    xs
+    (vec->list E
+      (length E xs)
+      (list->vec E xs))))
+```
+
+继而可以知道 base 的类型，即`(motive nil)`的值是：
+
+```pie
+(= (List E)
+  nil
+  (vec->list E
+    (length E nil)
+    (list->vec E nil)))
+```
+
+这个表达式可以简化成`(= (List E) nil nil)`。所以应该用`(same nil)`作为 base 的值。有了 motive 和 base 后，`list->vec->list=`的定义暂时写作：
+
+```pie
+(claim list->vec->list=
+  (Π ((E U)
+      (lst (List E)))
+    (= (List E)
+       lst
+       (vec->list E
+         (length E lst)
+         (list->vec E lst)))))
+(define list->vec->list=
+  (λ (E lst)
+    (ind-List lst
+      (λ (xs)
+        (= (List E)
+          xs
+          (vec->list E
+            (length E xs)
+            (list->vec E xs))))
+      (same nil)
+      TODO)))
+```
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
