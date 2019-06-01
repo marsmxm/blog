@@ -1045,7 +1045,7 @@ c8.pie:28.4: TODO:
     (list->vec E nil)))
 ```
 
-这个表达式可以简化成`(= (List E) nil nil)`。所以应该用`(same nil)`作为 base 的值。有了 motive 和 base 后，`list->vec->list=`的定义暂时写作：
+这个表达式可以简化成`(= (List E) nil nil)`。所以应该用`(same nil)`作为 base 的值。有了 motive 和 base 之后`list->vec->list=`的定义如下：
 
 ```pie
 (claim list->vec->list=
@@ -1068,6 +1068,121 @@ c8.pie:28.4: TODO:
       (same nil)
       TODO)))
 ```
+
+接下来需要确定 step 函数的类型及定义。`ind-List`的 step 参数类型是：
+
+```pie
+(Π ((e E)
+    (es (List E)))
+  (-> (motive es)
+    (motive (:: e es))))
+```
+
+把`motive`替换成我们写好的定义后得到的类型是：
+
+```pie
+(Π ((e E)
+    (es (List E)))
+  (-> (= (List E)
+        es
+        (vec->list E
+          (length E es)
+          (list->vec E es)))
+    (= (List E)
+      (:: e es)
+      (vec->list E
+        (length E (:: e es))
+        (list->vec E (:: e es))))))
+```
+
+这个类型乍看起来比较复杂，直接证明的话可能会觉得无从下手。我们可以试着简化一下最后的返回值类型。根据`length`函数的定义，可以知道`(length E (:: e es))`其实等于`(add1 (length E es))`；同样的，`(list->vec E (:: e es))`表达式也可以简化成`(vec:: e (list->vec E es))`。这样转换后的返回值类型就变成了：
+
+```pie
+(= (List E)
+  (:: e es)
+  (vec->list E
+    (add1 (length E es))
+    (vec:: e (list->vec E es))))
+```
+
+最后再根据`vec->list`的定义，把这个类型进一步简化成：
+
+```pie
+(= (List E)
+  (:: e es)
+  (:: e
+    (vec->list E
+      (length E es)
+      (list->vec E es))))
+```
+
+把这个结果带回 step 的类型中，就得到了简化后的 step 类型：
+
+```pie
+(Π ((e E)
+    (es (List E)))
+  (-> (= (List E)
+        es
+        (vec->list E
+          (length E es)
+          (list->vec E es)))
+    (= (List E)
+      (:: e es)
+      (:: e
+        (vec->list E
+          (length E es)
+          (list->vec E es))))))
+```
+
+现在从假设（`->`的参数）到结论（`->`的返回值）的途径变得更明显了：分别把元素`e`加到假设中的`es`和`(vec-list ...)`表达式的前面。所以仍然可以借助`cong`来写出 step 的定义：
+
+```pie
+(λ (e es =-es)
+  (cong =-es
+    (λ (xs) (:: e xs))))
+```
+
+这里`=-es`参数代表的是类型中`->`的参数，即假设的等式；`(λ (xs) (:: e xs))`是一个把`e`加到任意 List 前面的匿名函数，它会被用来把`e`分别加到`=-es`中的 from 和 to 之前。不过把这个 step 的定义放回`list->vec->list=`的定义中后，解释器却无法确定`(λ (xs) (:: e xs))`的类型：
+![list-vec-error](/dt/list-vec-error.png)
+
+所以我们需要用`the`表达式来加入一个类型提示：
+
+```pie
+(λ (e es =-es)
+  (cong =-es
+    (the (-> (List E) (List E))
+      (λ (xs) (:: e xs)))))
+```
+
+这样我们就写出了完整的对于`list->vec->list=`命题的证明：
+
+```pie
+(claim list->vec->list=
+  (Π ((E U)
+      (es (List E)))
+    (= (List E)
+       es
+       (vec->list E
+         (length E es)
+         (list->vec E es)))))
+(define list->vec->list=
+  (λ (E lst)
+    (ind-List lst
+      (λ (xs)
+        (= (List E)
+          xs
+          (vec->list E
+            (length E xs)
+            (list->vec E xs))))
+      (same nil)
+      (λ (e es =-es)
+        (cong =-es
+          (the (-> (List E) (List E))
+            (λ (xs) (:: e xs))))))))
+```
+
+因为类型系统接受了这个定义，也就意味着“对于任意一个 List，连续应用`list->vec`和`vec->list`后值不变”这个定理是成立的。这样我们也就基本能够确定函数`list->vec`和`vec->list`的定义是正确的。为了进一步说明，我们可以试着把`list->vec->list=`中的`list->vec`换成上节里的`list->vec-wrong`，看看解释器会给出什么样的回应：
+![list-vec-wrong](/dt/list-vec-wrong.png)
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
