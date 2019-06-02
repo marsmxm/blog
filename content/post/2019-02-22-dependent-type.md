@@ -1184,6 +1184,44 @@ c8.pie:28.4: TODO:
 因为类型系统接受了这个定义，也就意味着“对于任意一个 List，连续应用`list->vec`和`vec->list`后值不变”这个定理是成立的。这样我们也就基本能够确定函数`list->vec`和`vec->list`的定义是正确的。为了进一步说明，我们可以试着把`list->vec->list=`中的`list->vec`换成上节里的`list->vec-wrong`，看看解释器会给出什么样的回应：
 ![list-vec-wrong](/dt/list-vec-wrong.png)
 
+解释器不再接受这个证明了，虽然错误消息比较抽象，但至少能看出来如果函数定义错误的话，类型系统就会拒绝我们对定理的证明。
+
+### 存在量词
+
+上节说了如果把类型看作定理的话，`Π`就相当于全称量词。那么谓词逻辑中的存在量词在 Pie 的类型中是如何表达的呢。先介绍一个新的类型`Pair`。从名字就可以看出来，一个`Pair`类型的值由两个值组成，这两个值的类型可以相同也可以不同。`Pair`类型的可以写作`(Pair A D)`，其中`A`是第一个元素的类型，`D`则是第二个的类型。构造一个`Pair`是用到的 constructor 是`cons`:
+
+```pie
+(claim a-pair
+  (Pair Nat Atom))
+(define a-pair
+  (cons 5 'men))
+```
+
+另外`Pair`有两个 eliminator，`car`和`cdr`，可以分别用来得到第一个和第二个元素：
+
+```pie
+> a-pair
+(the (Pair Nat Atom)
+  (cons 5 'men))
+
+> (car a-pair)
+(the Nat 5)
+
+> (cdr a-pair)
+(the Atom 'men)
+```
+
+就像`Π`表达式是`->`类型的一个更一般的表现形式，`Pair`也有一个更通用的类型表达式`Sigma`，也可以简写成希腊字母`Σ`[^9]。`Σ`类型表达式的用法是`(Σ ((x A1) (y A2) ...) D)`，其中`x`和`y`是两个变量，可以出现在类型`D`中。当`Σ`和`=`类型一起使用时，我们就可以把`Σ`看作是存在量词。例如这个类型：
+
+```pie
+(Σ ((name Atom))
+  (= Atom name 'Jack))
+```
+
+可以把它读作，“存在一个`Atom`类型的值`name`，它的值等于`'Jack`”。这个命题的证明也很简单，和`'Jack`相等的`Atom`值也只有`'Jack`：`(cons 'Jack (same 'Jack))`。因为`Σ`类型本质上就是`Pair`类型，所以用到了`cons`来构造一个`Pair`。里面的`same`则是用来构造`=`类型的值，这个值也是这个存在命题的证明。
+
+
+
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
 [^3]: 在 DrRacket 中可以通过快捷键 ⌘-\ 输入字母 λ。
@@ -1193,3 +1231,4 @@ c8.pie:28.4: TODO:
 [^6]: 关于 parameter 和 index 的更详细准确的区别可以参考 [stackoverflow 上的这个问题](https://stackoverflow.com/questions/24600256/difference-between-type-parameters-and-indices)。
 [^7]: motive 这个名字应该是来自[这篇论文](http://www.cs.ru.nl/F.Wiedijk/courses/tt-2010/tvftl/conor-elimination.pdf)。
 [^8]: [《计算进化史》](https://book.douban.com/subject/26975991/)这本书里有比较深入的关于这方面的讨论。
+[^9]: 如果已经导入了脚注 5 中的文件的话，可以在 DrRacket 里按 Ctrl-] 来输入字母 Σ。
