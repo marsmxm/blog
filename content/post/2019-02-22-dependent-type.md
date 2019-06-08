@@ -170,7 +170,7 @@ Nat ::= (add1 Nat)
 
 如果熟悉所谓的函数式语言，可以看出来`which-Nat`其实就是这些语言里的 pattern matching（虽然并不完全等同，后边会说到区别在哪）。如果用 Idris 实现`pred`的话，会是这个样子：
 
-```Idris
+```idris
 pred : Nat -> Nat
 pred Z = Z
 pred (S k) = k
@@ -178,7 +178,7 @@ pred (S k) = k
 
 在 Idris 里，`Z`和`S k`分别是`Nat`类型的两个 constructor，等同于 Pie 里的`zero`和`(add1 n)`。后两行的两个 pattern matching 的分支也对应于`which-Nat`的`base`和`step`。前面说到的`which-Nat`和 pattern matching 的区别指的是，在常规的 pattern matching 中可以对函数递归调用，而 Pie 并不允许用户定义的函数对自身的递归调用，这个限制的目的是为了保证所有的函数都是 [**total**](https://en.wikipedia.org/wiki/Partial_function#Total_function) 的。举实现自然数加法运算的函数为例，在支持递归调用的语言比如 Idris 中可以这样实现（递归在最后一行）：
 
-```Idris
+```idris
 plus : Nat -> Nat -> Nat
 plus Z m = m
 plus (S k) m = S (plus k m)
@@ -186,7 +186,7 @@ plus (S k) m = S (plus k m)
 
 如果 Pie 允许函数的递归调用，完全可以用`which-Nat`实现同样的逻辑：
 
-```Pie
+```pie
 (claim +
   (-> Nat Nat
     Nat))
@@ -1278,14 +1278,89 @@ c8.pie:28.4: TODO:
       (Even (+ 2 n)))))
 ```
 
-要证明这个命题，就得想办法从`(Even n)`类型也就是`(Σ ((half Nat)) (= Nat n (+ half half)))`类型的值得到`(Even (+ 2 n))`类型即`(Σ ((new-half Nat)) (= Nat (+ 2 n) (+ new-half new-half)))`类型的值。这两个类型里的`half`和`new-half`是有一定关联性的，想一下会发现`new-half`其实等于`(add1 half)`，因为偶数加 2 后的一半比原来的一半大一。所以返回值的`cdr`部分的等式可以进一步写成`(= Nat (+ 2 n) (+ (add1 half) (add1 half)))`。
+要证明这个命题，就得想办法从`(Even n)`类型也就是`(Σ ((half Nat)) (= Nat n (+ half half)))`类型的值得到`(Even (+ 2 n))`类型即`(Σ ((new-half Nat)) (= Nat (+ 2 n) (+ new-half new-half)))`类型的值。这两个类型里的`half`和`new-half`是有一定关联性的，想一下会发现`new-half`其实等于`(add1 half)`，因为偶数加 2 后的一半比原来的一半大一。所以返回值的`cdr`部分的等式可以进一步写成`(= Nat (+ 2 n) (+ (add1 half) (add1 half)))`。下面是证明的开头部分：
 
 ```pie
 (define +two-even
   (λ (n)
-    (λ (even-n) ; (Σ ((half Nat)) (= Nat n (+ half half)))
-      TODO)))
+    (λ (even-n)                 ; (Σ ((half Nat)) (= Nat n (+ half half)))
+      (cons (add1 (car even-n)) ; (car even-n) 就是 (Even n) 中的 half
+        TODO))))                ; (= Nat (+ 2 n) (+ (add1 half) (add1 half)))
 ```
+
+如果对比一下`(cdr even-n)`的类型`(= Nat n (+ half half))`和`TODO`的类型`(= Nat (+ 2 n) (+ (add1 half) (add1 half))`，会发现其实后者其实就是把前者的两个加数分别加 2 后得到的（两个`(add1 half)`相加相当于把`(+ half half)`整个加 2）。这样看起我们可以用`cong`从`(cdr even-n)`来得到期望的类型的值：
+
+```pie
+(define +two-even
+  (λ (n)
+    (λ (even-n)
+      (cons (add1 (car even-n)) 
+        (cong (cdr even-n) (+ 2)))))) ; 错误：类型不匹配
+```
+
+但是实际运行的结果是解释器在最后一行报出类型不匹配的错误：
+![plus2even](/dt/plus2even.png)
+上面的 Expected 指的是声明的类型`(= Nat (+ 2 n) (+ (add1 half) (add1 half))`，下面的 but given 则是表达式`(cong (cdr even-n) (+ 2))`的类型，意味着我们用`cong`做的尝试失败了。仔细对比上下两个类型会发现问题出在`(+ (add1 half) (add1 half))`只能把第一个`add1`提到最外层，但是对后一个却无能为力。像我们之前说的，根源还是在`+`函数的定义中是把第一个参数作为了 target。那么我们是不是可以试着证明`+`的第二个参数的`add1`也是可以提到最外层的。如果能得到这个中间命题的证明我们就可以用它来把上图中不匹配的两个类型串到一起。所以我们就试着把这个命题声明出来：
+
+```pie
+(claim lift-right-add1
+  (Π ((n Nat)
+      (m Nat))
+    (= Nat (add1 (+ n m)) (+ n (add1 m)))))
+```
+
+这是个关于自然数的命题，可以用`ind-Nat`来证明：
+
+```pie
+(define lift-right-add1
+  (λ (n m)
+    (ind-Nat n
+      (λ (k) 
+        (= Nat (add1 (+ k m)) (+ k (add1 m))))
+      (same (add1 m))
+      (λ (n-1 lra-n-1)  ; (= Nat (add1 (+ n-1 m)) (+ n-1 (add1 m)))
+        TODO))))        ; (= Nat (add1 (+ (add1 n-1) m)) (+ (add1 n-1) (add1 m)))
+```
+
+这里选择把第一个参数`n`作为 target，可以让证明更简单。注释中分别写出了`lra-n-1`和`TODO`的类型，`TODO`的类型可以进一步简化成`(= Nat (add1 (add1 (+ n-1 m))) (add1 (+ n-1 (add1 m))))`，把两个`n-1`前面的`add1`都提到最外层，这样就变成了一个可以用`cong`证明的命题：
+
+```pie
+(define lift-right-add1
+  (λ (n m)
+    (ind-Nat n
+      (λ (k) 
+        (= Nat (add1 (+ k m)) (+ k (add1 m))))
+      (same (add1 m))
+      (λ (n-1 lra-n-1)            ; (= Nat (add1 (+ n-1 m)) (+ n-1 (add1 m)))
+        (cong lra-n-1 (+ 1))))))  ; (= Nat (add1 (add1 (+ n-1 m))) (add1 (+ n-1 (add1 m))))
+```
+
+有了`lift-right-add1`，剩下的问题就是怎样用它来解决`+two-even`中类型不匹配的问题，再回顾总结一下这个问题。我们声明的类型（也就是要证明的命题）是`(= Nat (+ 2 n) (+ (add1 half) (add1 half)))`，现在已经从已有的`(Even n)`类型的值`even-n`通过`cong`得到了一个类型是`(= Nat (+ 2 n) (add1 (add1 (+ half half))))`的值`(cong (cdr even-n) (+ 2))`。这两个类型不匹配的原因是`(+ (add1 half) (add1 half))`的第二个`add1`没法提到`+`的外层，所以我们又证明了可以把第二个`add1`提出来的中间定理`lift-right-add1`，现在的问题就是怎样用这个中间定理把我们已有的类型转成要得到的类型，这就要用到`=`类型的另一个叫作`replace`的 eliminator 了：
+![replace](/dt/replace.png)
+直接从`replace`的这个类型描述上看它的用法不是很直观，所以我们结合`+two-even`中要解决的问题来说明一下：
+![+two-even](/dt/+two-even.png)
+上图中，箭头 1 指向的是中间定理`lift-right-add1`，我们把它作为`replace`的 target。箭头 2 指向的是`replace`的 motive，里面的空白方框代表的是`motive`的参数。我们把 target 的红蓝两部分分别叫作 from 和 to。当把红色的 from 作为参数传给 motive 时，得到是我们已有的`(cong (cdr even-n) (+ 2))`的值的类型，也就是箭头 3 指向的红色表达式。这里需要说明的是因为`lift-right-add1`是作用于任意自然数`n`和`m`的定理，这里我们需要把`n`和`m`分别换成`(add half)`和`half`。
+
+最后当把蓝色的部分传递给 motive 后，得到的就是我们要证明的命题（箭头 4 所指），而`replace`表达式的返回值就是这个命题的证明。从逻辑上来理解`replace`可能会更容易一些，它表达的想法其实就是，如果我们有两个等价的命题，target 的 from 和 to，如果能给出 from -> U（`(motive from)`）这个命题的证明（`replace`的 base），那么就可以得到 to -> U（`(motive to)`）这个命题的证明。现在我们有了`+two-even`的证明的最后一块拼图了：
+
+```pie
+(claim +two-even
+  (Π ((n Nat))
+    (-> (Even n)
+      (Even (+ 2 n)))))
+(define +two-even
+  (λ (n)
+    (λ (even-n) ; (Σ ((half Nat)) (= Nat n (+ half half)))
+      (cons (add1 (car even-n))
+        (replace (lift-right-add1
+                   (add1 (car even-n))
+                   (car even-n))
+          (λ (k)
+            (= Nat (+ 2 n) k))
+          (cong (cdr even-n) (+ 2)))))))
+```
+
+这段程序里的`(car even-n)`是`(Even n)`类型中的`half`，`(cdr even-n)`是`(Even n)`中的等式。而`(lift-right-add1 (add1 (car even-n)) (car even-n))`其实就是把中间定理`lift-right-add1`里的`n`和`m`分别换成`(add1 (car even-n))`和`(car even-n)`。
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
