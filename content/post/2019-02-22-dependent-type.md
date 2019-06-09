@@ -87,7 +87,7 @@ Pie 的语法类似于 Lisp 的各种方言（Scheme，Racket 和 Clojure 等）
 - 自然数`Nat`。表示所有大于等于 0 的整数。
 - 原子`Atom`。相当于 Lisp 中的 symbol 类型，或者也可以粗略的近似于大部分语言里的字符串。`Atom`的值由单撇号和一个或多个字母或连字符组成，例如`'abc`，`'---`和`'Atom`。
 - 函数`(-> Type-1 Type-2 ... Type-n)`。这里最后的`Type-n`是函数的返回值类型，其他的`Type-1 Type-2 ...`是参数类型。
-- 全集`U`。因为在 Pie 里所有的类型可以像值一样被计算和传递，所以它们本身也需要一个类型，就是`U`。`U`是除自身外所有类型的类型。
+- 全集`U`。因为在 Pie 里所有的类型可以像值一样被计算和传递，所以它们本身也需要一个类型，这个类型就是`U`。`U`是除自身外所有类型的类型。
 
 还有一些复合类型会在后面用到的时候再作详细解释。Pie 的每个类型都有对应的 constructor 和 eliminator。前者用来构造该类型的值；后者的用处是**运用该类型的值所包含的信息来得到所需要的新值**，如果把某种类型的值看作一个罐头的话，那它对应的 eliminator 就像一个起子，而且不同构造的罐头需要用到不一样的起子。
 
@@ -157,7 +157,7 @@ Nat ::= (add1 Nat)
 
 函数`pred`用到的 eliminator 是 [which-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._which-.Nat%29%29)。`which-Nat`的使用方式是`(which-Nat target base step)`，它的值由`target`、`base`和`step`三个参数决定。如果用`X`指代`which-Nat`的返回值类型，那么`target`的类型是`Nat`，`base`的类型是`X`，而`step`是一个类型为`(-> Nat X)`的函数。
 ![which-Nat](/dt/which-Nat.png)
-当`target`等于`0`时，`base`的值即为`which-Nat`的值；如果`target`不为`0`即`target`可以表示成形如`(add1 n-1)`的自然数（这里的`n-1`是一个普通的标识符，不是`n`减`1`的表达式），这时`which-Nat`的值等于`step`函数作用于`n-1`（即比`target`小`1`的自然数）所得到的值。
+当`target`等于`0`时，`base`的值即为整个`which-Nat`表达式的值；如果`target`不为`0`或者说`target`可以表示成形如`(add1 n-1)`的自然数（这里的`n-1`是一个普通的标识符，不是`n`减`1`的表达式），这时`which-Nat`的值等于`step`函数作用于`n-1`（即比`target`小`1`的自然数）所得到的值。
 
 在上述函数`pred`中，`which-Nat`的`target`是`pred`的参数`n`，`base`是`0`，`step`是函数`(λ (n-1) n-1)`。所以当`n`等于`0`时，`which-Nat`返回`base`的值，`0`；当`n`大于`0`或者说`n`等于`(add1 n-1)`时，`which-Nat`返回的就是`(step n-1)`的值，即参数`n-1`本身。
 
@@ -168,7 +168,7 @@ Nat ::= (add1 Nat)
 (the Nat 0)
 ```
 
-如果熟悉所谓的函数式语言，可以看出来`which-Nat`其实就是这些语言里的 pattern matching（虽然并不完全等同，后边会说到区别在哪）。如果用 Idris 实现`pred`的话，会是这个样子：
+如果熟悉所谓的函数式语言，可以看出来`which-Nat`其实就是这些语言里的 pattern matching（虽然并不完全等同，后边会说到区别）。如果用 Idris 实现`pred`的话，会是这个样子：
 
 ```idris
 pred : Nat -> Nat
@@ -176,7 +176,7 @@ pred Z = Z
 pred (S k) = k
 ```
 
-在 Idris 里，`Z`和`S k`分别是`Nat`类型的两个 constructor，等同于 Pie 里的`zero`和`(add1 n)`。后两行的两个 pattern matching 的分支也对应于`which-Nat`的`base`和`step`。前面说到的`which-Nat`和 pattern matching 的区别指的是，在常规的 pattern matching 中可以对函数递归调用，而 Pie 并不允许用户定义的函数对自身的递归调用，这个限制的目的是为了保证所有的函数都是 [**total**](https://en.wikipedia.org/wiki/Partial_function#Total_function) 的。举实现自然数加法运算的函数为例，在支持递归调用的语言比如 Idris 中可以这样实现（递归在最后一行）：
+在 Idris 里，`Z`和`S`分别是`Nat`类型的两个 constructor，等同于 Pie 里的`zero`和`add1`。后两行的两个 pattern matching 的分支也对应于`which-Nat`的`base`和`step`。前面说到的`which-Nat`和 pattern matching 的区别指的是，在常规的 pattern matching 中可以对函数递归调用，而 Pie 并不允许用户定义的函数对自身的递归调用，这个限制的目的是为了保证所有的函数都是 [**total**](https://en.wikipedia.org/wiki/Partial_function#Total_function) 的。举实现自然数加法运算的函数为例，在支持递归调用的语言比如 Idris 中可以这样实现（递归在最后一行）：
 
 ```idris
 plus : Nat -> Nat -> Nat
@@ -439,7 +439,7 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
       Nat)))
 ```
 
-`Pi`表达式的第一个列表里可以写多个类型变量`(Π ((x X) (y Y) ...) ...)`，其中`x`、`y`是变量名，`X`和`Y`是变量的类型。`length`的类型声明里只需要一个变量`E`，因为`E`是 List 里元素的类型，所以它的类型是`U`。如果类比 Java 的泛型，
+`Pi`表达式的第一个列表里可以写多个类型变量`(Π ((x X) (y Y) ...) ...)`，其中`x`、`y`是变量名，`X`和`Y`是变量的类型。`length`的类型声明里只需要一个变量`E`，因为`E`是 List 里元素的类型，所以`E`的类型是`U`。如果类比 Java 的泛型，
 
 ```java
 <E> int length(List<E> lst) {...}
@@ -477,7 +477,7 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
         (add1 length-es)))))
 ```
 
-`Π`和箭头表达式组合在一起声明了一个接受两个参数返回一个`Nat`的函数，定义中对应的两个参数一个是类型为任意类型`U`的参数`E`，另一个是类型为`(List E)`的参数`lst`。函数体中只用到了第二个参数`lst`，把它作为`target`传给`rec-List`表达式。当`lst`为`nil`时长度为`0`；若`lst`可以表示为`(:: e es)`形式的非空 List，则`step`函数的第三个参数是把`es`作为新的`target`的递归`rec-List`表达式，`(rec-List es 0 step)`的值，因为这个值其实就是`es`的长度，所以起名叫`length-es`。又因为`es`比`lst`少一个元素`e`，所以`lst`长度等于`es`的长度加一，即`(add1 length-es)`。
+`Π`和箭头表达式组合在一起声明了一个接受两个参数返回一个`Nat`的函数，定义中对应的两个参数一个是类型为`U`的参数`E`，另一个是类型为`(List E)`的参数`lst`。函数体中只用到了第二个参数`lst`，把它作为`target`传给`rec-List`表达式。当`lst`为`nil`时长度为`0`；若`lst`可以表示为`(:: e es)`形式的非空 List，则`step`函数的第三个参数是表达式`(rec-List es 0 step)`的值，因为这个值其实就是`es`的长度，所以起名叫`length-es`。又因为`es`比`lst`少一个元素`e`，所以`lst`长度等于`es`的长度加一，即`(add1 length-es)`。
 
 有了`length`就可以得到任意 List 的长度了：
 
@@ -560,7 +560,7 @@ List 有两个 constructor：`nil`和`::` [^4]。`nil`构造一个空 List；`::
      (length Atom existentialists)))
 ```
 
-这里我们通过`append`函数应有的一个属性—— append 后得到的 List 的长度等于两个参数 List 长度的和——来检验函数的正确性。`check-same`表达式的使用方式是`(check-same type expr1 expr2)`，如果`expr1`和`expr2`不是`type`类型的相等的两个值，解释器会“静态”地指出这个错误：
+这里我们通过`append`函数应有的一个属性—— append 后得到的 List 的长度等于两个参数 List 长度的和——来检验函数的正确性。`check-same`表达式的使用方式是`(check-same type expr1 expr2)`，如果`expr1`和`expr2`不是两个相等的`type`类型的值，解释器会“静态”地指出这个错误：
 ![check-same](/dt/check-same.png)
 
 下面要介绍的这个新类型可以说是有长度属性的 List，和这个新类型相关的函数都可以借助参数和返回值的类型来自动实现类似于上面程序片段中的对于长度属性的检查。
@@ -599,7 +599,7 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
 因为类型`E`和次数`count`在后面的类型声明中都会用到，所以被放在了`Π`表达式的参数列表里。表达式`(-> E (Vec E count))`指的是一个接受一个类型为`E`的值作为参数，返回一个`(Vec E count)`的函数。假设我们用已有的`rec-Nat`来实现的话，大概会这样写：
 
 ```pie
-;; initial try, won't work
+;; 一次失败的尝试😢
 (define repeat
   (λ (E count)
     (λ (e)
@@ -609,13 +609,13 @@ Vec 的 constructor 和 List 的非常相似，分别是`vecnil`和`vec::`，对
           (vec:: e repeat-c-1))))))
 ```
 
-但是问题出在`rec-Nat`要求`base`、`step`以及整个`rec-Nat`表达式的值的类型必须一致，在上述定义中，`repeat`的声明类型即整个`rec-Nat`表达式的类型是`(Vec E count)`；`base`是类型为`(Vec E 0)`的`vecnil`；而`step`每次递归调用所返回的类型都不一样，在`target`从`1`到`count`变化的过程中，返回值也从`(Vec E 1)`变到`(Vec E count)`。所以解释器不会接受这个函数定义。
+但是问题是`rec-Nat`要求`base`、`step`以及整个`rec-Nat`表达式的值的类型必须一致，在上述定义中，`repeat`的声明类型即整个`rec-Nat`表达式的类型是`(Vec E count)`；`base`是类型为`(Vec E 0)`的`vecnil`；而`step`每次递归调用所返回的类型都不一样，在`target`从`1`到`count`变化的过程中，返回值也从`(Vec E 1)`变到`(Vec E count)`。所以解释器不会接受这个函数定义。
 
 #### 更强大的归纳式 eliminator
 
 像 Vec 这样接受参数的类型在类型理论里被叫做 type family，随着传入的参数的不同，得到的类型也在变化。所以上例中的`(Vec E 0)`、`(Vec E 1)`…… 在类型系统看来都是不同的类型。而类似于`E`这样不变的参数被称作 **parameter**，像`0`、`1`…… 这样变化着的参数被叫做 **index** [^6]。在 Pie 语言里处理包含不同 index 的一类类型时，需要用到的一类 eliminator 都以 ind- 开头（ind 是 inductive 的缩写）。在`repeat`函数中，因为 target 是`Nat`类型的，所以用到的 eliminator 是 [ind-Nat](https://docs.racket-lang.org/pie/index.html#%28def._%28%28lib._pie%2Fmain..rkt%29._ind-.Nat%29%29)。`ind-Nat`除了接受和`rec-Nat`类似的`target`、`base`和`step`三个参数外，还需要一个额外的参数`motive`[^7]。
 ![ind-Nat](/dt/ind-Nat.png)
-`motive`的类型是`(-> Nat U)`，它根据传入的自然数参数返回一个对应的**类型**。在`ind-Nat`中，`target`的类型仍然为`Nat`；`base`的类型变成了`(motive zero)`，也就是传入的函数`motive`作用于自然数`zero`时返回的类型；整个`ind-Nat`表达式的值的类型是`(motive target)`；而`step`的类型要更复杂一些：
+`motive`的类型是`(-> Nat U)`，它根据传入的自然数参数返回一个对应的**类型**。在`ind-Nat`中，`target`的类型仍然为`Nat`；`base`的类型变成了`(motive zero)`，也就是函数`motive`作用于自然数`zero`时返回的类型；整个`ind-Nat`表达式的值的类型是`(motive target)`；而`step`的类型要更复杂一些：
 
 ```pie
 (Π ((n Nat))
@@ -1300,7 +1300,7 @@ c8.pie:28.4: TODO:
 
 但是实际运行的结果是解释器在最后一行报出类型不匹配的错误：
 ![plus2even](/dt/plus2even.png)
-上面的 Expected 指的是声明的类型`(= Nat (+ 2 n) (+ (add1 half) (add1 half))`，下面的 but given 则是表达式`(cong (cdr even-n) (+ 2))`的类型，意味着我们用`cong`做的尝试失败了。仔细对比上下两个类型会发现问题出在`(+ (add1 half) (add1 half))`只能把第一个`add1`提到最外层，但是对后一个却无能为力。像我们之前说的，根源还是在`+`函数的定义中是把第一个参数作为了 target。那么我们是不是可以试着证明`+`的第二个参数的`add1`也是可以提到最外层的。如果能得到这个中间命题的证明我们就可以用它来把上图中不匹配的两个类型串到一起。所以我们就试着把这个命题声明出来：
+我们用`cong`做的尝试还是失败了，上面的 Expected 指的是声明的类型`(= Nat (+ 2 n) (+ (add1 half) (add1 half))`，下面的 but given 则是表达式`(cong (cdr even-n) (+ 2))`的类型。仔细对比上下两个类型会发现问题出在`(+ (add1 half) (add1 half))`只能把第一个`add1`提到最外层，但是对后一个却无能为力。像我们之前说的，根源还是在`+`函数的定义中是把第一个参数作为了 target。那么我们是不是可以先试着声明“`+`的第二个参数的`add1`也是可以提到最外层的”这个中间定理。这个中间命题的证明可以被用来把上图中不匹配的两个类型串到一起。下面就是这个中间定理的声明：
 
 ```pie
 (claim lift-right-add1
@@ -1309,37 +1309,37 @@ c8.pie:28.4: TODO:
     (= Nat (add1 (+ n m)) (+ n (add1 m)))))
 ```
 
-这是个关于自然数的命题，可以用`ind-Nat`来证明：
+这里`=`类型的 from 部分的`add1`在`+`的外面，to 部分的`add1`则在第二个加数的前面，如果 from 和 to 相等也就意味着第二个加数前的`add1`是可以提到`+`函数外层的。这是个关于自然数的命题，可以用`ind-Nat`来证明：
 
 ```pie
 (define lift-right-add1
   (λ (n m)
     (ind-Nat n
-      (λ (k) 
+      (λ (k)
         (= Nat (add1 (+ k m)) (+ k (add1 m))))
       (same (add1 m))
       (λ (n-1 lra-n-1)  ; (= Nat (add1 (+ n-1 m)) (+ n-1 (add1 m)))
         TODO))))        ; (= Nat (add1 (+ (add1 n-1) m)) (+ (add1 n-1) (add1 m)))
 ```
 
-这里选择把第一个参数`n`作为 target，可以让证明更简单。注释中分别写出了`lra-n-1`和`TODO`的类型，`TODO`的类型可以进一步简化成`(= Nat (add1 (add1 (+ n-1 m))) (add1 (+ n-1 (add1 m))))`，把两个`n-1`前面的`add1`都提到最外层，这样就变成了一个可以用`cong`证明的命题：
+这里为了让证明更简单，选择把第一个参数`n`作为 target。注释中分别写出了`lra-n-1`和`TODO`的类型，`TODO`的类型可以通过把两个`n-1`前面的`add1`都提到最外层进一步简化成`(= Nat (add1 (add1 (+ n-1 m))) (add1 (+ n-1 (add1 m))))`，这样我们就又可以用`cong`来证明了：
 
 ```pie
 (define lift-right-add1
   (λ (n m)
     (ind-Nat n
-      (λ (k) 
+      (λ (k)
         (= Nat (add1 (+ k m)) (+ k (add1 m))))
       (same (add1 m))
       (λ (n-1 lra-n-1)            ; (= Nat (add1 (+ n-1 m)) (+ n-1 (add1 m)))
         (cong lra-n-1 (+ 1))))))  ; (= Nat (add1 (add1 (+ n-1 m))) (add1 (+ n-1 (add1 m))))
 ```
 
-有了`lift-right-add1`，剩下的问题就是怎样用它来解决`+two-even`中类型不匹配的问题，再回顾总结一下这个问题。我们声明的类型（也就是要证明的命题）是`(= Nat (+ 2 n) (+ (add1 half) (add1 half)))`，现在已经从已有的`(Even n)`类型的值`even-n`通过`cong`得到了一个类型是`(= Nat (+ 2 n) (add1 (add1 (+ half half))))`的值`(cong (cdr even-n) (+ 2))`。这两个类型不匹配的原因是`(+ (add1 half) (add1 half))`的第二个`add1`没法提到`+`的外层，所以我们又证明了可以把第二个`add1`提出来的中间定理`lift-right-add1`，现在的问题就是怎样用这个中间定理把我们已有的类型转成要得到的类型，这就要用到`=`类型的另一个叫作`replace`的 eliminator 了：
+有了`lift-right-add1`，剩下的问题就是怎样用它来解决`+two-even`中类型不匹配的问题，再回顾总结一下这个问题。我们声明的类型（也就是要证明的命题）是`(= Nat (+ 2 n) (+ (add1 half) (add1 half)))`，现在已经从已有的`(Even n)`类型的值`even-n`通过`cong`得到了一个类型是`(= Nat (+ 2 n) (add1 (add1 (+ half half))))`的值`(cong (cdr even-n) (+ 2))`。这两个类型不匹配的原因是`(+ (add1 half) (add1 half))`的第二个`add1`没法提到`+`的外层，所以我们又证明了可以把第二个`add1`提出来的中间定理`lift-right-add1`，现在的问题就是怎样用这个中间定理把我们已有的类型转成要得到的类型。这就要用到`=`类型的另一个叫作`replace`的 eliminator 了：
 ![replace](/dt/replace.png)
 直接从`replace`的这个类型描述上看它的用法不是很直观，所以我们结合`+two-even`中要解决的问题来说明一下：
 ![+two-even](/dt/+two-even.png)
-上图中，箭头 1 指向的是中间定理`lift-right-add1`，我们把它作为`replace`的 target。箭头 2 指向的是`replace`的 motive，里面的空白方框代表的是`motive`的参数。我们把 target 的红蓝两部分分别叫作 from 和 to。当把红色的 from 作为参数传给 motive 时，得到是我们已有的`(cong (cdr even-n) (+ 2))`的值的类型，也就是箭头 3 指向的红色表达式。这里需要说明的是因为`lift-right-add1`是作用于任意自然数`n`和`m`的定理，这里我们需要把`n`和`m`分别换成`(add half)`和`half`。
+上图中，箭头 1 指向的是中间定理`lift-right-add1`，我们把它作为`replace`的 target。箭头 2 指向的是`replace`的 motive，里面的空白方框代表的是`motive`的参数。target 的红蓝两部分对应的分别是`=`表达式的 from 和 to。当把红色的 from 作为参数传给 motive 时，得到是我们已有的类型，也就是箭头 3 指向的红色表达式，而这个类型的证明正是我们用`cong`所得到的值`(cong (cdr even-n) (+ 2))`。这里需要说明的是因为`lift-right-add1`是作用于任意自然数`n`和`m`的定理，这里我们需要把`n`和`m`分别换成`(add half)`和`half`。
 
 最后当把蓝色的部分传递给 motive 后，得到的就是我们要证明的命题（箭头 4 所指），而`replace`表达式的返回值就是这个命题的证明。从逻辑上来理解`replace`可能会更容易一些，它表达的想法其实就是，如果我们有两个等价的命题，target 的 from 和 to，如果能给出 from -> U（`(motive from)`）这个命题的证明（`replace`的 base），那么就可以得到 to -> U（`(motive to)`）这个命题的证明。现在我们有了`+two-even`的证明的最后一块拼图了：
 
@@ -1361,6 +1361,50 @@ c8.pie:28.4: TODO:
 ```
 
 这段程序里的`(car even-n)`是`(Even n)`类型中的`half`，`(cdr even-n)`是`(Even n)`中的等式。而`(lift-right-add1 (add1 (car even-n)) (car even-n))`其实就是把中间定理`lift-right-add1`里的`n`和`m`分别换成`(add1 (car even-n))`和`(car even-n)`。
+
+费尽辛苦终于得到了命题`+two-even`的证明，不过这份“辛苦”也许并不是很必要😅。 像前面提到的，这个证明的困难根源于`+`函数的第二个参数如果是`(add1 ...)`的形式，这个`add1`是没法拿到`+`外面的。那么如果我们换一种方式定义`Even`，使得`+`不再出现，是不是`+two-even`也会变得更加容易证明呢？比如我们可以定义一个函数`double`：
+
+```pie
+(claim double
+  (-> Nat Nat))
+(define double
+  (λ (n)
+    (rec-Nat n
+      0
+      (λ (n-1 double-n-1)
+        (+ 2 double-n-1)))))
+```
+
+这个定义递归地遍历参数`n`中的每个`add1`，然后将其替换成两个`add1`，所以最终结果就是一个二倍于参数`n`的自然数。接下来用`double`来定义一个新的`Even-with-double`：
+
+```pie
+(claim Even-with-double
+  (-> Nat U))
+(define Even-with-double
+  (λ (n)
+    (Σ ((half Nat))
+      (= Nat n (double half)))))
+```
+
+`Even-with-double`表达的想法和`Even`是一致的，区别只在于前者用的`double`实现，而后者用的是`+`。现在对基于`Even-with-double`的命题`+two-even`的证明就变得简单了多：
+
+```pie
+(claim +two-even-with-double
+  (Π ((n Nat))
+    (-> (Even-with-double n)
+      (Even-with-double (+ 2 n)))))
+(define +two-even-with-double
+  (λ (n)
+    (λ (even-n)
+      (cons (add1 (car even-n))
+        (cong (cdr even-n) (+ 2))))))
+```
+
+可以看到这次不再需要用到`replace`，因为根据定义，`(double (add1 half))`可以直接变为`(add1 (add1 (double half)))`，这样表达式`(cong (cdr even-n) (+ 2))`的类型也就和期望的返回值类型一致了。所以可以看出来，不同的命题表达形式会影响到证明的难易程度。一般来说，选择能让参数“更快”得缩减到最简形式的函数来定义命题的话，会使证明更简单。
+
+## 结尾
+
+到这里本文对 Pie 语言中的定理证明的介绍已经完结，这篇文章也接近尾声了。其实最开始只是想写一篇《The Little Typer》的读后感，结果慢慢地发展（啰嗦）到了这么长。如果读过本文升起了一丝对依赖类型或定理证明的兴趣，强烈推荐继续读一下《The Little Typer》这本书，它远比本文有趣的多，而且还有很多有意思的概念这里限于篇幅也没办法一一介绍。如果想了解依赖类型的一些更“实际”的应用场景，可以看一下本文开头所提的 Idris 语言，以及该语言作者的书《Type-Driven Development with Idris》。另外，如果想从更理论的方向掌握定理证明的话，这本在线的教科书[《Software Foundations》](https://softwarefoundations.cis.upenn.edu/current/index.html)，以及配套的编程语言 [Coq](https://coq.inria.fr/) 会是个不错的选择。
 
 [^1]: 类型可以出现在普通的表达式中，比如可以把类型作为参数传递给函数，函数也可以把类型像值一样返回。
 [^2]: 比如著名的[四色定理](https://en.wikipedia.org/wiki/Four_color_theorem)的证明就是在 1976 年由计算机的定理证明程序来辅助推导得出的。
