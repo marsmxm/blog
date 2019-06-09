@@ -1,6 +1,6 @@
 ---
 title: "依赖类型与定理证明"
-date: 2019-04-14T00:56:13+08:00
+date: 2019-06-09T23:56:13+08:00
 draft: false
 author: "Mu Xian Ming"
 
